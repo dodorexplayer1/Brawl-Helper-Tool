@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Brawl Helper Tool V4.8</title>
+<title>Brawl Helper Tool V5</title>
 
 <style>
 body {
@@ -12,43 +12,13 @@ body {
     margin: 0;
 }
 
-h1 { color: #4dff88; }
+h1 { color: #4dff88; text-align:center; }
 
-nav {
-    display: flex;
-    justify-content: center;
-    background: #111;
-    padding: 10px;
-}
-
-nav button {
-    margin: 5px;
-    padding: 10px;
-    border: none;
-    border-radius: 8px;
-    background: #1b1b1b;
-    color: white;
-    cursor: pointer;
-}
-
-nav button:hover {
-    background: #4dff88;
-    color: black;
-}
-
-.section {
-    display: none;
-    padding: 20px;
-}
-
-.active {
-    display: block;
-}
-
-.grid {
+.container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 10px;
+    padding: 20px;
 }
 
 .card {
@@ -58,175 +28,351 @@ nav button:hover {
     cursor: pointer;
 }
 
-.detail {
-    background: #151515;
+.card:hover {
+    transform: scale(1.03);
+}
+
+.panel {
     padding: 20px;
+    background: #151515;
+    margin: 20px;
     border-radius: 12px;
-    margin-top: 20px;
 }
 
 .good { color: #4dff88; }
 .info { color: #ffd24d; }
-
-.small {
-    font-size: 12px;
-    opacity: 0.7;
-}
 </style>
-
 </head>
 
 <body>
 
-<h1 style="text-align:center;">🔥 Brawl Helper Tool V4.8</h1>
+<h1>🔥 Brawl Helper Tool V5</h1>
 
-<nav>
-    <button onclick="showTab('home')">🏠 Home</button>
-    <button onclick="showTab('list')">📋 Brawler</button>
-    <button onclick="showTab('stats')">📊 Stats</button>
-</nav>
+<div class="panel" id="detail">Klicke auf einen Brawler</div>
 
-<!-- HOME -->
-<div id="home" class="section active">
-    <h2>Dashboard</h2>
-    <p class="info">Willkommen in deiner Meta Plattform</p>
-</div>
-
-<!-- LIST -->
-<div id="list" class="section">
-
-    <h2>📋 Brawler Liste</h2>
-
-    <div id="brawlers" class="grid"></div>
-
-</div>
-
-<!-- STATS -->
-<div id="stats" class="section">
-
-    <h2>📊 Detail</h2>
-
-    <div id="detail" class="detail">
-        Klicke auf einen Brawler
-    </div>
-
-</div>
+<div class="container" id="list"></div>
 
 <script>
 
 //
 // =========================
-// 📦 DATA
+// 📦 DATA ENGINE (ALLE BRAWLER)
+// =========================
 //
 
 const BRAWLERS = [
-    create("Shelly", "Shotgun", 7),
-    create("Colt", "Shooter", 8),
-    create("Bull", "Tank", 9),
-    create("Nita", "Control", 7),
-    create("Piper", "Sniper", 9),
-    create("Leon", "Assassin", 8),
-    create("Spike", "Control", 9)
+
+{
+name:"Shelly", level:11, hp:7400, role:"Shotgun",
+super:"Supermuschel",
+sp:["Schnellpflaster","Schockgranate"],
+gadgets:["Vorpreschen","Tontaubenschießen"],
+hc:"Doppelläufig",
+gears:["Schaden","Tempo"],
+trait:"-"
+},
+
+{
+name:"Nita", level:11, hp:8000, role:"Control",
+super:"Schockwelle",
+sp:["Bärenbruder","Bärenwut"],
+gadgets:["Bärenpranke","Fellschild"],
+hc:"Hyperbär",
+gears:["Pet-Power","Schaden"],
+trait:"-"
+},
+
+{
+name:"Colt", level:11, hp:5600, role:"Shooter",
+super:"Sechsschüsser",
+sp:["Slick Boots","Magnum Special"],
+gadgets:["Speedloader","Silberkugel"],
+hc:"Beidhändig",
+gears:["Nachladen","Schaden"],
+trait:"-"
+},
+
+{
+name:"Bull", level:11, hp:10000, role:"Tank",
+super:"Bulldozer",
+sp:["Berserker","Harter Kerl"],
+gadgets:["T-Bone-Injektion","Stampfer"],
+hc:"Eiserner Wille",
+gears:["Schaden","Schild"],
+trait:"Tank-Trait"
+},
+
+{
+name:"Brock", level:11, hp:4800, role:"Shooter",
+super:"Raketenregen",
+sp:["Brandraketen","Rakete Nr.4"],
+gadgets:["Raketenschnürsenkel","Megarakete"],
+hc:"Flächenbombardement",
+gears:["Nachladen","Schaden"],
+trait:"-"
+},
+
+{
+name:"El Primo", level:11, hp:12000, role:"Tank",
+super:"Flying Elbow Drop",
+sp:["El Fuego","Meteorausch"],
+gadgets:["Suplex-Wurf","Asteroidengürtel"],
+hc:"Schwerkraft-Smash",
+gears:["Tempo","Gesundheit"],
+trait:"Tank-Trait"
+},
+
+{
+name:"Barley", level:11, hp:4800, role:"Control",
+super:"Letzte Bestellung",
+sp:["Medizinisch","Extra schädlich"],
+gadgets:["Sirup","Kräuter-Tonic"],
+hc:"Flächenbrand",
+gears:["Schaden","Schild"],
+trait:"-"
+},
+
+{
+name:"Poco", level:11, hp:7400, role:"Support",
+super:"Zugabe",
+sp:["Da Capo","Kreisch"],
+gadgets:["Stimmgabel","Melodie"],
+hc:"Heilende Welle",
+gears:["Heilung","Tempo"],
+trait:"-"
+},
+
+{
+name:"Rosa", level:11, hp:10000, role:"Tank",
+super:"Ranken-Rüstung",
+sp:["Pflanzenpflege","Dornige Handschuhe"],
+gadgets:["Wachstumslicht","Gebüsch"],
+hc:"Naturzorn",
+gears:["Tempo","Schaden"],
+trait:"Tank-Trait"
+},
+
+{
+name:"Jessie", level:11, hp:6000, role:"Control",
+super:"Scrappy",
+sp:["Energie tanken","Schocky"],
+gadgets:["Zündkerze","Rückstoß"],
+hc:"Scrappy 2.0",
+gears:["Pet-Power","Schaden"],
+trait:"-"
+},
+
+{
+name:"Dynamike", level:11, hp:5600, role:"Thrower",
+super:"Riesenfass",
+sp:["Dynasprung","Demolierung"],
+gadgets:["Spinner","Satchel Charge"],
+hc:"Boomer",
+gears:["Schaden","Schild"],
+trait:"-"
+},
+
+{
+name:"Tick", level:11, hp:4400, role:"Thrower",
+super:"Kopflos",
+sp:["Geölt","Automa-Tick"],
+gadgets:["Minen-Mania","Letztes Hurra"],
+hc:"Kopfjäger",
+gears:["Schaden","Schild"],
+trait:"-"
+},
+
+{
+name:"8-Bit", level:11, hp:10000, role:"Damage",
+super:"Schadensbooster",
+sp:["Boost","Extra-Leben"],
+gadgets:["Cheat-Modul","Credits"],
+hc:"Overclock",
+gears:["Tempo","Schaden"],
+trait:"-"
+},
+
+{
+name:"Rico", level:11, hp:5600, role:"Shooter",
+super:"Trickschuss",
+sp:["Abpraller","Robo-Rückzug"],
+gadgets:["Multiball","Hüpfburg"],
+hc:"Kugelregen",
+gears:["Nachladen","Schaden"],
+trait:"-"
+},
+
+{
+name:"Darryl", level:11, hp:10600, role:"Tank",
+super:"Rollendes Fass",
+sp:["Stahlringe","Nachladen"],
+gadgets:["Teer","Rotator"],
+hc:"Sturmflut",
+gears:["Tempo","Schild"],
+trait:"Super lädt passiv auf"
+},
+
+{
+name:"Penny", level:11, hp:6400, role:"Control",
+super:"Kanonade",
+sp:["Geldsack","Meister"],
+gadgets:["Salzschuss","Fernrohr"],
+hc:"Kanone",
+gears:["Pet-Power","Schild"],
+trait:"-"
+},
+
+{
+name:"Carl", level:11, hp:8000, role:"Tank",
+super:"Wirbelwind",
+sp:["Kraftwurf","Schutz"],
+gadgets:["Hitzedüsen","Haken"],
+hc:"Tornadoschlag",
+gears:["Schaden","Schild"],
+trait:"-"
+},
+
+{
+name:"Jacky", level:11, hp:10000, role:"Tank",
+super:"Erdbeben",
+sp:["Konter","Helm"],
+gadgets:["Booster","Umbau"],
+hc:"Erdbeben",
+gears:["Tempo","Schaden"],
+trait:"Tank-Trait"
+},
+
+{
+name:"Gus", level:11, hp:6400, role:"Support",
+super:"Geisterball",
+sp:["Gesundheit","Geister"],
+gadgets:["Seelentausch","Knall"],
+hc:"Poltergeist",
+gears:["Schild","Heilung"],
+trait:"-"
+},
+
+{
+name:"Bo", level:11, hp:7200, role:"Control",
+super:"Minenfeld",
+sp:["Adlerauge","Fallen"],
+gadgets:["Totem","Sprengpfeil"],
+hc:"Minenfeld",
+gears:["Nachladen","Tempo"],
+trait:"-"
+},
+
+{
+name:"Emz", level:11, hp:7200, role:"Control",
+super:"Toxischer Nebel",
+sp:["Karma","Hype"],
+gadgets:["Säure","Friendzone"],
+hc:"Nebel",
+gears:["Schaden","Tempo"],
+trait:"-"
+},
+
+{
+name:"Stu", level:11, hp:5800, role:"Assassin",
+super:"Nitro-Boost",
+sp:["Null Reibung","Heilgas"],
+gadgets:["Speed-Zone","Durchbruch"],
+hc:"Nitro",
+gears:["Tempo","Schild"],
+trait:"-"
+},
+
+{
+name:"Pam", level:11, hp:9600, role:"Support",
+super:"Heilende Aura",
+sp:["Umarmung","Quetsche"],
+gadgets:["Puls","Schrott"],
+hc:"Aura",
+gears:["Heilung","Schild"],
+trait:"-"
+},
+
+{
+name:"Frank", level:11, hp:14000, role:"Tank",
+super:"Schockwelle",
+sp:["Power","Schwamm"],
+gadgets:["Noise","Anziehung"],
+hc:"Smash",
+gears:["Tempo","Schild"],
+trait:"Tank-Trait"
+}
+
 ];
 
-function create(name, role, power) {
-    return {
-        name,
-        role,
-        stats: {
-            dmg: power + 1,
-            rng: power,
-            hp: 10 - power,
-            spd: power
-        }
-    };
+//
+// =========================
+// ⚙️ META ENGINE
+// =========================
+//
+
+function meta(b){
+    return (b.hp/1000) + (b.role==="Tank"?2:0) + (b.gears.includes("Schaden")?1:0);
 }
 
-function meta(b) {
-    return (
-        b.stats.dmg * 0.35 +
-        b.stats.rng * 0.25 +
-        b.stats.hp * 0.25 +
-        b.stats.spd * 0.15
-    );
+function tier(m){
+    if(m>=12)return"S";
+    if(m>=10)return"A";
+    if(m>=8)return"B";
+    return"C";
 }
 
 //
 // =========================
-// 🧭 NAVIGATION
-//
-
-function showTab(id) {
-
-    document.querySelectorAll(".section")
-        .forEach(s => s.classList.remove("active"));
-
-    document.getElementById(id).classList.add("active");
-
-}
-
-//
+// 🖥️ RENDER
 // =========================
-// 📋 LIST
 //
 
-function render() {
+function render(){
 
-    const container = document.getElementById("brawlers");
+const list=document.getElementById("list");
+list.innerHTML="";
 
-    container.innerHTML = "";
+BRAWLERS
+.sort((a,b)=>meta(b)-meta(a))
+.forEach(b=>{
 
-    BRAWLERS
-        .sort((a, b) => meta(b) - meta(a))
-        .forEach(b => {
+let div=document.createElement("div");
+div.className="card";
 
-            let div = document.createElement("div");
-            div.className = "card";
+div.innerHTML=`
+<h3>${b.name}</h3>
+<p class="info">${b.role}</p>
+<p>HP: ${b.hp}</p>
+<p>Tier: ${tier(meta(b))}</p>
+`;
 
-            div.onclick = () => showDetail(b);
+div.onclick=()=>show(b);
 
-            div.innerHTML = `
-                <h3>${b.name}</h3>
-                <p class="info">${b.role}</p>
-                <p>Meta: ${meta(b).toFixed(1)}</p>
-            `;
+list.appendChild(div);
 
-            container.appendChild(div);
-        });
+});
+
 }
 
 //
 // =========================
 // 📊 DETAIL
+// =========================
 //
 
-function showDetail(b) {
+function show(b){
 
-    showTab("stats");
+document.getElementById("detail").innerHTML=`
+<h2>${b.name}</h2>
+<p>${b.role}</p>
+<hr>
+<p>HP: ${b.hp}</p>
+<p>Super: ${b.super}</p>
+<p class="good">Meta: ${meta(b)}</p>
+<p>Tier: ${tier(meta(b))}</p>
+`;
 
-    document.getElementById("detail").innerHTML = `
-        <h2>${b.name}</h2>
-
-        <p class="info">${b.role}</p>
-
-        <hr>
-
-        <p>💥 DMG: ${b.stats.dmg}</p>
-        <p>🎯 RNG: ${b.stats.rng}</p>
-        <p>❤️ HP: ${b.stats.hp}</p>
-        <p>⚡ SPD: ${b.stats.spd}</p>
-
-        <hr>
-
-        <p class="good">Meta Score: ${meta(b).toFixed(1)}</p>
-
-        <p class="small">V4.8 Dashboard System</p>
-    `;
 }
-
-//
-// INIT
-//
 
 render();
 
