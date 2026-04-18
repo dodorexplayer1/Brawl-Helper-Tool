@@ -2,61 +2,55 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Brawl Helper Tool V3</title>
+<title>Brawl Helper Tool V4</title>
 
 <style>
 body {
     font-family: Arial;
-    background: #0b0b0b;
+    background: #0a0a0a;
     color: white;
     text-align: center;
-    margin: 0;
     padding: 20px;
 }
 
-h1 {
-    margin-top: 10px;
-    color: #4dff88;
-}
+h1 { color: #4dff88; }
 
 select, button {
     padding: 10px;
     margin: 10px;
-    font-size: 16px;
     border-radius: 8px;
     border: none;
 }
 
 button {
     background: #4dff88;
-    color: black;
     font-weight: bold;
     cursor: pointer;
 }
 
 .card {
-    background: #1c1c1c;
+    background: #1b1b1b;
     padding: 20px;
-    margin-top: 20px;
     border-radius: 12px;
+    margin-top: 20px;
     display: inline-block;
-    min-width: 320px;
-    max-width: 90%;
+    min-width: 340px;
+    max-width: 95%;
     text-align: left;
 }
 
 .good { color: #4dff88; }
 .bad { color: #ff4d4d; }
 .info { color: #ffd24d; }
-.small { font-size: 13px; opacity: 0.8; }
+.small { font-size: 12px; opacity: 0.7; }
 </style>
 
 </head>
 
 <body>
 
-<h1>🔥 Brawl Helper Tool V3</h1>
-<p class="small">Counter + Star Powers + Gadgets + Hypercharge System</p>
+<h1>🔥 Brawl Helper Tool V4</h1>
+<p class="small">Meta System + Smart Counter Engine</p>
 
 <select id="brawlerSelect"></select>
 <br>
@@ -67,17 +61,17 @@ button {
 <script>
 
 // =========================
-// 🎮 BRAWLER DATABASE V3
+// 🎮 V4 BRAWLER SYSTEM
 // =========================
 
 const brawlers = [
-    { name: "Shelly", damage: 8, range: 4, hp: 7, speed: 6, role: "Shotgun", sp: "Shell Shock", gadget: "Fast Heal", hyper: false },
-    { name: "Colt", damage: 9, range: 9, hp: 4, speed: 7, role: "Shooter", sp: "Slick Boots", gadget: "Reload Boost", hyper: true },
-    { name: "Bull", damage: 9, range: 2, hp: 10, speed: 6, role: "Tank", sp: "Tough Guy", gadget: "Stun Dash", hyper: false },
-    { name: "Nita", damage: 6, range: 5, hp: 7, speed: 6, role: "Control", sp: "Bear With Me", gadget: "Bear Shield", hyper: false },
-    { name: "Piper", damage: 10, range: 10, hp: 3, speed: 6, role: "Sniper", sp: "Snappy Sniping", gadget: "Escape Shot", hyper: true },
-    { name: "Leon", damage: 8, range: 5, hp: 5, speed: 10, role: "Assassin", sp: "Invisibility Heal", gadget: "Smoke Bomb", hyper: true },
-    { name: "Spike", damage: 9, range: 7, hp: 4, speed: 7, role: "Control", sp: "Fertilize", gadget: "Spike Field", hyper: true }
+    { name: "Shelly", dmg: 8, rng: 4, hp: 7, spd: 6, role: "Shotgun" },
+    { name: "Colt", dmg: 9, rng: 9, hp: 4, spd: 7, role: "Shooter" },
+    { name: "Bull", dmg: 9, rng: 2, hp: 10, spd: 6, role: "Tank" },
+    { name: "Nita", dmg: 6, rng: 5, hp: 7, spd: 6, role: "Control" },
+    { name: "Piper", dmg: 10, rng: 10, hp: 3, spd: 6, role: "Sniper" },
+    { name: "Leon", dmg: 8, rng: 5, hp: 5, spd: 10, role: "Assassin" },
+    { name: "Spike", dmg: 9, rng: 7, hp: 4, spd: 7, role: "Control" }
 ];
 
 // =========================
@@ -87,14 +81,14 @@ const brawlers = [
 const select = document.getElementById("brawlerSelect");
 
 brawlers.forEach(b => {
-    let opt = document.createElement("option");
-    opt.value = b.name;
-    opt.innerText = b.name;
-    select.appendChild(opt);
+    let o = document.createElement("option");
+    o.value = b.name;
+    o.innerText = b.name;
+    select.appendChild(o);
 });
 
 // =========================
-// 🧠 V3 COUNTER ENGINE
+// 🧠 V4 META ENGINE
 // =========================
 
 function analyze() {
@@ -105,42 +99,35 @@ function analyze() {
     let strengths = [];
     let weaknesses = [];
 
+    let totalScore = 0;
+
     brawlers.forEach(enemy => {
 
         if (enemy.name === b.name) return;
 
         let score = 0;
 
-        // BASIC STATS
-        if (b.range > enemy.range) score += 2;
-        else score -= 2;
+        // 📊 BASIC STATS WEIGHTED
+        score += (b.rng - enemy.rng) * 2;
+        score += (b.dmg - enemy.dmg) * 1.2;
+        score += (b.hp - enemy.hp) * 1.1;
+        score += (b.spd - enemy.spd) * 0.5;
 
-        if (b.damage > enemy.damage) score += 1;
-        else score -= 1;
+        // 🧠 ROLE META SYSTEM
+        const meta = {
+            "Tank": { "Sniper": 2 },
+            "Sniper": { "Tank": -2 },
+            "Assassin": { "Shooter": 1.5 },
+            "Shooter": { "Assassin": -1 }
+        };
 
-        if (b.hp > enemy.hp) score += 1;
-        else score -= 1;
+        if (meta[b.role] && meta[b.role][enemy.role]) {
+            score += meta[b.role][enemy.role];
+        }
 
-        if (b.speed > enemy.speed) score += 0.5;
-        else score -= 0.5;
+        // 📈 COLLECT TOTAL META SCORE
+        totalScore += score;
 
-        // ROLE SYSTEM
-        if (b.role === "Tank" && enemy.role === "Sniper") score += 2;
-        if (b.role === "Sniper" && enemy.role === "Tank") score -= 2;
-        if (b.role === "Assassin" && enemy.role === "Shooter") score += 1;
-
-        // ⭐ STAR POWER BONUS
-        if (b.sp.includes("Heal")) score += 0.5;
-        if (b.sp.includes("Sniping")) score += 0.5;
-
-        // 🎮 GADGET BONUS
-        if (b.gadget.includes("Shield")) score += 0.5;
-        if (b.gadget.includes("Dash")) score += 0.5;
-
-        // ⚡ HYPERCHARGE BOOST
-        if (b.hyper) score += 1;
-
-        // RESULT
         if (score >= 2) {
             strengths.push(`${enemy.name} <span class="info">(+${score.toFixed(1)})</span>`);
         } 
@@ -149,10 +136,22 @@ function analyze() {
         }
     });
 
+    // =========================
+    // 🏆 META RATING
+    // =========================
+
+    let rating = "Normal";
+
+    if (totalScore > 10) rating = "🔥 OP Meta";
+    else if (totalScore > 5) rating = "🟢 Strong";
+    else if (totalScore < -5) rating = "🔴 Weak";
+
     document.getElementById("result").innerHTML = `
         <h2>${b.name}</h2>
 
         <p><b>Rolle:</b> ${b.role}</p>
+
+        <p class="info"><b>Meta Rating:</b> ${rating}</p>
 
         <p class="good"><b>Stark gegen:</b><br>${strengths.join("<br>") || "Keine Daten"}</p>
 
@@ -160,9 +159,7 @@ function analyze() {
 
         <hr>
 
-        <p class="info"><b>Star Power:</b> ${b.sp}</p>
-        <p class="info"><b>Gadget:</b> ${b.gadget}</p>
-        <p class="info"><b>Hypercharge:</b> ${b.hyper ? "Ja ⚡" : "Nein"}</p>
+        <p class="small">Total Meta Score: ${totalScore.toFixed(1)}</p>
     `;
 }
 
