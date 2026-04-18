@@ -1,1 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brawl Draft Tool</title>
 
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#0f172a;
+  color:white;
+}
+
+.container{
+  max-width:600px;
+  margin:auto;
+  padding:20px;
+  text-align:center;
+}
+
+h1{
+  margin-top:10px;
+}
+
+input,button{
+  width:100%;
+  padding:12px;
+  margin:8px 0;
+  border-radius:8px;
+  border:none;
+  font-size:16px;
+}
+
+button{
+  background:#3b82f6;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.box{
+  background:#111827;
+  padding:15px;
+  margin-top:15px;
+  border-radius:10px;
+  min-height:50px;
+}
+
+hr{
+  border:1px solid #1f2937;
+  margin:20px 0;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🎮 Brawl Draft Assistant</h1>
+
+<p>Enter enemy team:</p>
+
+<input id="e1" placeholder="Enemy 1">
+<input id="e2" placeholder="Enemy 2">
+<input id="e3" placeholder="Enemy 3">
+
+<button onclick="bestPick()">🔥 Find Best Counter Pick</button>
+
+<div id="result" class="box">Result will appear here</div>
+
+<hr>
+
+<h2>🤝 Team Combo Assist</h2>
+
+<p>Your team picks:</p>
+
+<input id="t1" placeholder="Your Brawler 1">
+<input id="t2" placeholder="Your Brawler 2">
+
+<button onclick="bestTeam()">⚡ Find Best Team</button>
+
+<div id="team" class="box">Team result will appear here</div>
+
+</div>
+
+<script>
+
+function bestPick(){
+
+let enemies = (e1.value+" "+e2.value+" "+e3.value).toLowerCase();
+
+let pick="Spike";
+let reason="Strong allround pick";
+
+if(enemies.includes("bull")){
+pick="Shelly";
+reason="Counters tanks very well";
+}
+else if(enemies.includes("bibi")){
+pick="Piper";
+reason="Good range advantage";
+}
+else if(enemies.includes("mortis")){
+pick="Colt";
+reason="High damage + control";
+}
+
+result.innerHTML="🔥 Best Pick: "+pick+"<br>🧠 "+reason;
+}
+
+function bestTeam(){
+
+let team = (t1.value+" "+t2.value).toLowerCase();
+
+let combo="Spike + Pam + Gene";
+let reason="Strong control + support + damage";
+
+if(team.includes("tank")){
+combo="Tank + Support + DPS";
+reason="Balanced team setup";
+}
+else if(team.includes("sniper")){
+combo="Double support + control";
+reason="Safe long-range control";
+}
+
+team.innerHTML="🤝 Best Team: "+combo+"<br>🧠 "+reason;
+}
+
+</script>
+
+</body>
+</html>
