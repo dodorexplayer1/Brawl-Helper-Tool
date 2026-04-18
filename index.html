@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Brawl Helper Tool V8.1</title>
+<title>Brawl Helper Tool V8.2</title>
 
 <style>
 body{
@@ -44,6 +44,14 @@ margin:10px;
 .bad{color:#ff4d4d;}
 .info{color:#ffd24d;}
 .small{font-size:12px;color:#aaa;}
+
+.tag{
+padding:3px 8px;
+border-radius:6px;
+background:#333;
+margin-left:5px;
+font-size:12px;
+}
 </style>
 
 </head>
@@ -53,25 +61,20 @@ margin:10px;
 <div class="nav">
 <button onclick="go('home')">🏠 Home</button>
 <button onclick="go('match')">⚔️ Match</button>
-<button onclick="go('clan')">🧑‍🤝‍🧑 Clan</button>
-<button onclick="go('replay')">📜 Replay</button>
-<button onclick="go('ladder')">🏆 Ladder</button>
+<button onclick="go('team')">🧑‍🤝‍🧑 Team Finder</button>
+<button onclick="go('job')">📢 Jobs</button>
+<button onclick="go('profile')">👤 Profile</button>
 </div>
 
-<h2 style="text-align:center;color:#4dff88;">🔥 Brawl Helper Tool V8.1</h2>
+<h2 style="text-align:center;color:#4dff88;">🔥 Brawl Helper Tool V8.2</h2>
 
 <!-- HOME -->
 <div id="home" class="page active">
 
 <div class="card">
-<h3>🌐 PERSISTENT SERVER CORE</h3>
+<h3>🌐 SERVER STATUS</h3>
 <p id="tick">Tick: 0</p>
-<p id="session">Session: NONE</p>
-</div>
-
-<div class="card">
-<h3>💾 LOCAL DB SYNC</h3>
-<p id="db">Not Synced</p>
+<p id="status">Online</p>
 </div>
 
 </div>
@@ -80,7 +83,7 @@ margin:10px;
 <div id="match" class="page">
 
 <div class="card">
-<h3>⚔️ RANGE MATCHMAKING SYSTEM</h3>
+<h3>⚔️ QUICK MATCH</h3>
 
 <select id="a"></select>
 <select id="b"></select>
@@ -89,86 +92,75 @@ margin:10px;
 
 <div id="matchBox"></div>
 
-<div class="card small">
-<h3>👀 Spectators</h3>
-<div id="spectators"></div>
 </div>
 
 </div>
 
-</div>
-
-<!-- CLAN -->
-<div id="clan" class="page">
+<!-- TEAM FINDER -->
+<div id="team" class="page">
 
 <div class="card">
-<h3>🧑‍🤝‍🧑 Clan System</h3>
+<h3>🧑‍🤝‍🧑 TEAM FINDER (LFG)</h3>
 
-<button onclick="joinClan('Red')">Red Clan</button>
-<button onclick="joinClan('Blue')">Blue Clan</button>
+<input id="jobTitle" placeholder="z.B. Suche 2 Pro Spieler für Ranked">
+<br><br>
 
-<p id="clanInfo"></p>
-<div id="clanStats"></div>
+<select id="rank">
+<option>Beginner</option>
+<option>Pro</option>
+<option>Master</option>
+<option>Elite</option>
+</select>
+
+<button onclick="postJob()">Job posten</button>
+
+<div id="jobBoard"></div>
 
 </div>
 
 </div>
 
-<!-- REPLAY -->
-<div id="replay" class="page">
+<!-- JOB FEED -->
+<div id="job" class="page">
 
 <div class="card">
-<h3>📜 Replay Viewer (Step Mode)</h3>
-
-<button onclick="playReplay()">Play Replay</button>
-
-<div id="replayBox"></div>
-
+<h3>📢 LIVE JOB FEED</h3>
+<div id="feed"></div>
 </div>
 
 </div>
 
-<!-- LADDER -->
-<div id="ladder" class="page">
+<!-- PROFILE -->
+<div id="profile" class="page">
 
 <div class="card">
-<h3>🏆 Global Ladder</h3>
-<div id="board"></div>
+<h3>👤 PLAYER PROFILE</h3>
+
+<p>Name: Player_1 <span class="tag">MASTER</span></p>
+<p>Status: Looking for Team</p>
+
+<button onclick="setStatus('Looking')">Looking for Team</button>
+<button onclick="setStatus('In Match')">In Match</button>
+
 </div>
 
 </div>
 
 <script>
 
-/* ===== SERVER CORE ===== */
+/* SERVER */
 let SERVER={
-players:{},
-matches:{},
-replays:[],
-events:[],
+jobs:[],
 tick:0
 };
 
-/* LOCAL STORAGE DB */
-function saveDB(){
-localStorage.setItem("SERVER",JSON.stringify(SERVER));
-}
-
-function loadDB(){
-let d=localStorage.getItem("SERVER");
-if(d) SERVER=JSON.parse(d);
-}
-
 /* PLAYERS */
 let PLAYERS=[
-{name:"Shelly",elo:1000,wins:0,losses:0,clan:null},
-{name:"Colt",elo:1000,wins:0,losses:0,clan:null},
-{name:"Bull",elo:1000,wins:0,losses:0,clan:null},
-{name:"Poco",elo:1000,wins:0,losses:0,clan:null}
+{name:"Shelly",rank:"Pro"},
+{name:"Colt",rank:"Master"},
+{name:"Bull",rank:"Elite"},
+{name:"Poco",rank:"Beginner"}
 ];
-
-/* MATCH */
-let match=null;
 
 /* NAV */
 function go(id){
@@ -176,23 +168,16 @@ document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
 document.getElementById(id).classList.add("active");
 }
 
-/* INIT */
-PLAYERS.forEach(p=>{
-SERVER.players[p.name]=p;
-});
-
-/* SERVER TICK */
+/* TICK */
 setInterval(()=>{
 
 SERVER.tick++;
 
 tick.innerHTML="Tick: "+SERVER.tick;
 
-session.innerHTML="Session Active";
+status.innerHTML="Online ✔";
 
-db.innerHTML="Synced ✔";
-
-saveDB();
+renderJobs();
 
 },500);
 
@@ -202,128 +187,77 @@ function startMatch(){
 let A=a.value;
 let B=b.value;
 
-match={
-A:A,
-B:B,
-hpA:100,
-hpB:100,
-tick:0,
-history:[]
-};
-
-run();
-
-}
-
-/* ENGINE */
-function run(){
-
-let interval=setInterval(()=>{
-
-match.tick++;
-
-match.hpA-=Math.random()*20;
-match.hpB-=Math.random()*20;
-
-match.history.push({
-t:match.tick,
-a:match.hpA,
-b:match.hpB
-});
-
-/* UI */
 matchBox.innerHTML=`
 <div class="card">
-⚔️ MATCH<br>
-${match.A}: ${Math.floor(match.hpA)}<br>
-${match.B}: ${Math.floor(match.hpB)}<br>
-Tick: ${match.tick}
+⚔️ MATCH STARTED<br>
+${A} vs ${B}
 </div>
 `;
 
-spectators.innerHTML=matchBox.innerHTML;
+}
 
-/* END */
-if(match.hpA<=0||match.hpB<=0){
+/* JOB SYSTEM */
+function postJob(){
 
-clearInterval(interval);
+let job={
+title:jobTitle.value,
+rank:rank.value,
+id:Math.random().toString(36).substr(2,5)
+};
 
-let winner=match.hpA>match.hpB?match.A:match.B;
+SERVER.jobs.push(job);
 
-SERVER.replays.push(match);
+feed.innerHTML="New Job Posted ✔";
 
-renderReplay();
-
-updateLadder();
+renderJobs();
 
 }
 
-},400);
+/* RENDER JOBS */
+function renderJobs(){
 
-}
-
-/* CLAN */
-function joinClan(c){
-
-SERVER.players[PLAYERS[0].name].clan=c;
-
-clanInfo.innerHTML="Clan: "+c;
-
-}
-
-/* REPLAY */
-function playReplay(){
-
-if(!SERVER.replays.length)return;
-
-let r=SERVER.replays[0];
-
-let i=0;
-
-let interval=setInterval(()=>{
-
-if(i>=r.history.length) clearInterval(interval);
-
-let s=r.history[i];
-
-replayBox.innerHTML=`
+jobBoard.innerHTML=SERVER.jobs.map(j=>`
 <div class="card">
-Replay Tick ${i}<br>
-A: ${Math.floor(s.a)}<br>
-B: ${Math.floor(s.b)}
-</div>
-`;
-
-i++;
-
-},300);
-
-}
-
-/* LADDER */
-function updateLadder(){
-
-let list=Object.values(SERVER.players);
-
-list.sort((a,b)=>b.elo-a.elo);
-
-board.innerHTML=list.map(p=>`
-<div class="card">
-${p.name} | Elo: ${p.elo}
+📢 ${j.title}<br>
+🏷️ Rank Needed: ${j.rank}<br>
+<button onclick="apply('${j.id}')">Apply</button>
 </div>
 `).join("");
 
+feed.innerHTML=SERVER.jobs.map(j=>`🟢 ${j.title}`).join("<br>");
+
 }
 
-/* INIT SELECT */
-function init(){
+/* APPLY SYSTEM */
+function apply(id){
 
-loadDB();
+let job=SERVER.jobs.find(j=>j.id===id);
+
+if(job){
+
+feed.innerHTML="Applied to: "+job.title;
+
+}
+
+}
+
+/* PROFILE STATUS */
+function setStatus(s){
+
+status.innerHTML="Status: "+s;
+
+}
+
+init();
+
+/* INIT */
+function init(){
 
 a.innerHTML="";
 b.innerHTML="";
 
 PLAYERS.forEach(p=>{
+
 let o1=document.createElement("option");
 o1.value=p.name;
 o1.text=p.name;
@@ -332,13 +266,10 @@ let o2=o1.cloneNode(true);
 
 a.appendChild(o1);
 b.appendChild(o2);
+
 });
 
-updateLadder();
-
 }
-
-init();
 
 </script>
 
