@@ -2,48 +2,70 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Brawl Helper Tool V3.9</title>
+<title>Brawl Helper Tool V4.8</title>
 
 <style>
 body {
     font-family: Arial;
     background: #0a0a0a;
     color: white;
-    text-align: center;
-    padding: 20px;
+    margin: 0;
 }
 
 h1 { color: #4dff88; }
 
-select, button {
+nav {
+    display: flex;
+    justify-content: center;
+    background: #111;
     padding: 10px;
-    margin: 6px;
-    border-radius: 8px;
-    border: none;
 }
 
-button {
-    background: #4dff88;
-    font-weight: bold;
+nav button {
+    margin: 5px;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: #1b1b1b;
+    color: white;
     cursor: pointer;
+}
+
+nav button:hover {
+    background: #4dff88;
     color: black;
+}
+
+.section {
+    display: none;
+    padding: 20px;
+}
+
+.active {
+    display: block;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
 }
 
 .card {
     background: #1b1b1b;
-    padding: 20px;
-    border-radius: 14px;
-    margin-top: 20px;
-    display: inline-block;
-    min-width: 360px;
-    max-width: 95%;
-    text-align: left;
+    padding: 15px;
+    border-radius: 12px;
+    cursor: pointer;
 }
 
-.history { margin-top: 20px; }
+.detail {
+    background: #151515;
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 20px;
+}
 
 .good { color: #4dff88; }
-.bad { color: #ff4d4d; }
 .info { color: #ffd24d; }
 
 .small {
@@ -56,28 +78,45 @@ button {
 
 <body>
 
-<h1>🔥 Brawl Helper Tool V3.9</h1>
-<p class="small">Pre-Release Version</p>
+<h1 style="text-align:center;">🔥 Brawl Helper Tool V4.8</h1>
 
-<div id="team"></div>
+<nav>
+    <button onclick="showTab('home')">🏠 Home</button>
+    <button onclick="showTab('list')">📋 Brawler</button>
+    <button onclick="showTab('stats')">📊 Stats</button>
+</nav>
 
-<button onclick="saveTeam()">💾 Speichern</button>
-<button onclick="analyze()">Analyse</button>
-<button onclick="resetTeam()">Reset</button>
+<!-- HOME -->
+<div id="home" class="section active">
+    <h2>Dashboard</h2>
+    <p class="info">Willkommen in deiner Meta Plattform</p>
+</div>
 
-<div id="result" class="card">Wähle dein Team</div>
+<!-- LIST -->
+<div id="list" class="section">
 
-<div class="card history">
-    <h3>🧠 Letzte Teams</h3>
-    <div id="history"></div>
+    <h2>📋 Brawler Liste</h2>
+
+    <div id="brawlers" class="grid"></div>
+
+</div>
+
+<!-- STATS -->
+<div id="stats" class="section">
+
+    <h2>📊 Detail</h2>
+
+    <div id="detail" class="detail">
+        Klicke auf einen Brawler
+    </div>
+
 </div>
 
 <script>
 
 //
 // =========================
-// 📦 DATA (weniger random → stabiler)
-// =========================
+// 📦 DATA
 //
 
 const BRAWLERS = [
@@ -87,172 +126,109 @@ const BRAWLERS = [
     create("Nita", "Control", 7),
     create("Piper", "Sniper", 9),
     create("Leon", "Assassin", 8),
-    create("Spike", "Control", 8)
+    create("Spike", "Control", 9)
 ];
 
 function create(name, role, power) {
     return {
         name,
         role,
-        power
+        stats: {
+            dmg: power + 1,
+            rng: power,
+            hp: 10 - power,
+            spd: power
+        }
     };
 }
 
-//
-// =========================
-// 🧩 UI
-// =========================
-//
-
-const teamDiv = document.getElementById("team");
-let selects = [];
-
-for (let i = 0; i < 3; i++) {
-
-    let sel = document.createElement("select");
-
-    BRAWLERS.forEach(b => {
-        let opt = document.createElement("option");
-        opt.value = b.name;
-        opt.innerText = b.name;
-        sel.appendChild(opt);
-    });
-
-    selects.push(sel);
-    teamDiv.appendChild(sel);
-}
-
-//
-// =========================
-// 💾 HISTORY
-// =========================
-//
-
-function loadHistory() {
-
-    let history = JSON.parse(localStorage.getItem("history") || "[]");
-
-    const div = document.getElementById("history");
-    div.innerHTML = "";
-
-    history.forEach(team => {
-
-        let btn = document.createElement("button");
-        btn.innerText = team.join(", ");
-
-        btn.onclick = () => {
-            team.forEach((name, i) => selects[i].value = name);
-        };
-
-        div.appendChild(btn);
-    });
-}
-
-function saveTeam() {
-
-    let team = selects.map(s => s.value);
-
-    let history = JSON.parse(localStorage.getItem("history") || "[]");
-
-    history.unshift(team);
-    history = history.slice(0, 5);
-
-    localStorage.setItem("history", JSON.stringify(history));
-
-    loadHistory();
-}
-
-function resetTeam() {
-    selects.forEach(s => s.selectedIndex = 0);
-}
-
-//
-// =========================
-// 🧠 ANALYSE V3.9
-// =========================
-//
-
-function analyze() {
-
-    let team = selects.map(s =>
-        BRAWLERS.find(b => b.name === s.value)
+function meta(b) {
+    return (
+        b.stats.dmg * 0.35 +
+        b.stats.rng * 0.25 +
+        b.stats.hp * 0.25 +
+        b.stats.spd * 0.15
     );
+}
 
-    let roles = {};
-    let baseScore = 0;
+//
+// =========================
+// 🧭 NAVIGATION
+//
 
-    for (let b of team) {
-        roles[b.role] = (roles[b.role] || 0) + 1;
-        baseScore += b.power;
-    }
+function showTab(id) {
 
-    // =========================
-    // 🤝 SYNERGY SYSTEM
-    // =========================
+    document.querySelectorAll(".section")
+        .forEach(s => s.classList.remove("active"));
 
-    let synergy = 0;
+    document.getElementById(id).classList.add("active");
 
-    if (roles["Tank"] && roles["Control"]) synergy += 5;
-    if (roles["Assassin"]) synergy += 3;
-    if (roles["Sniper"] && roles["Tank"]) synergy += 2;
+}
 
-    // =========================
-    // ⚠️ PROBLEME
-    // =========================
+//
+// =========================
+// 📋 LIST
+//
 
-    let issues = [];
+function render() {
 
-    if (!roles["Tank"]) issues.push("Kein Tank");
-    if (!roles["Sniper"]) issues.push("Kein Sniper");
-    if (roles["Sniper"] && !roles["Tank"]) issues.push("Sniper ohne Schutz");
+    const container = document.getElementById("brawlers");
 
-    // =========================
-    // 🤖 BEST ROLE RECOMMENDATION
-    // =========================
+    container.innerHTML = "";
 
-    let recommend = "Balanced";
+    BRAWLERS
+        .sort((a, b) => meta(b) - meta(a))
+        .forEach(b => {
 
-    if (!roles["Tank"]) recommend = "👉 Tank hinzufügen";
-    else if (!roles["Sniper"]) recommend = "👉 Sniper hinzufügen";
-    else if (!roles["Control"]) recommend = "👉 Control fehlt";
-    else if (!roles["Assassin"]) recommend = "👉 Assassin optional";
+            let div = document.createElement("div");
+            div.className = "card";
 
-    let total = baseScore + synergy;
+            div.onclick = () => showDetail(b);
 
-    let rating = "Normal";
+            div.innerHTML = `
+                <h3>${b.name}</h3>
+                <p class="info">${b.role}</p>
+                <p>Meta: ${meta(b).toFixed(1)}</p>
+            `;
 
-    if (total > 25) rating = "🔥 OP TEAM";
-    else if (total > 18) rating = "🟢 Strong Team";
-    else if (total < 12) rating = "🔴 Weak Team";
+            container.appendChild(div);
+        });
+}
 
-    document.getElementById("result").innerHTML = `
-        <h2>Team Analyse</h2>
+//
+// =========================
+// 📊 DETAIL
+//
 
-        <p class="info"><b>Rating:</b> ${rating}</p>
+function showDetail(b) {
 
-        <hr>
+    showTab("stats");
 
-        <p class="good"><b>Base Power:</b> ${baseScore}</p>
-        <p class="info"><b>Synergy:</b> +${synergy}</p>
-        <p class="info"><b>Total:</b> ${total}</p>
+    document.getElementById("detail").innerHTML = `
+        <h2>${b.name}</h2>
 
-        <hr>
-
-        <p class="bad"><b>Probleme:</b><br>
-        ${issues.length ? issues.join("<br>") : "Keine"}
-        </p>
+        <p class="info">${b.role}</p>
 
         <hr>
 
-        <p class="info"><b>Empfehlung:</b><br>${recommend}</p>
+        <p>💥 DMG: ${b.stats.dmg}</p>
+        <p>🎯 RNG: ${b.stats.rng}</p>
+        <p>❤️ HP: ${b.stats.hp}</p>
+        <p>⚡ SPD: ${b.stats.spd}</p>
 
         <hr>
 
-        <p class="small">V3.9 Pre-Release System</p>
+        <p class="good">Meta Score: ${meta(b).toFixed(1)}</p>
+
+        <p class="small">V4.8 Dashboard System</p>
     `;
 }
 
-loadHistory();
+//
+// INIT
+//
+
+render();
 
 </script>
 
