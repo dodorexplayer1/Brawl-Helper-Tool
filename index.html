@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Brawl Helper Tool V5</title>
+<title>Brawl Helper Tool V5.1</title>
 
 <style>
 body {
@@ -12,7 +12,19 @@ body {
     margin: 0;
 }
 
-h1 { color: #4dff88; text-align:center; }
+h1 { text-align:center; color:#4dff88; }
+
+.controls {
+    text-align:center;
+    padding: 10px;
+}
+
+input, select {
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    margin: 5px;
+}
 
 .container {
     display: grid;
@@ -34,19 +46,35 @@ h1 { color: #4dff88; text-align:center; }
 
 .panel {
     padding: 20px;
-    background: #151515;
     margin: 20px;
+    background: #151515;
     border-radius: 12px;
 }
 
-.good { color: #4dff88; }
-.info { color: #ffd24d; }
+.good { color:#4dff88; }
+.info { color:#ffd24d; }
 </style>
+
 </head>
 
 <body>
 
-<h1>🔥 Brawl Helper Tool V5</h1>
+<h1>🔥 Brawl Helper Tool V5.1</h1>
+
+<div class="controls">
+    <input id="search" placeholder="🔍 Brawler suchen..." oninput="render()">
+
+    <select id="roleFilter" onchange="render()">
+        <option value="ALL">Alle Rollen</option>
+        <option value="Tank">Tank</option>
+        <option value="Shooter">Shooter</option>
+        <option value="Control">Control</option>
+        <option value="Assassin">Assassin</option>
+        <option value="Support">Support</option>
+        <option value="Thrower">Thrower</option>
+        <option value="Damage">Damage</option>
+    </select>
+</div>
 
 <div class="panel" id="detail">Klicke auf einen Brawler</div>
 
@@ -56,269 +84,72 @@ h1 { color: #4dff88; text-align:center; }
 
 //
 // =========================
-// 📦 DATA ENGINE (ALLE BRAWLER)
+// 📦 DATA ENGINE (V5 CLEAN)
 // =========================
 //
 
 const BRAWLERS = [
 
-{
-name:"Shelly", level:11, hp:7400, role:"Shotgun",
-super:"Supermuschel",
-sp:["Schnellpflaster","Schockgranate"],
-gadgets:["Vorpreschen","Tontaubenschießen"],
-hc:"Doppelläufig",
-gears:["Schaden","Tempo"],
-trait:"-"
-},
-
-{
-name:"Nita", level:11, hp:8000, role:"Control",
-super:"Schockwelle",
-sp:["Bärenbruder","Bärenwut"],
-gadgets:["Bärenpranke","Fellschild"],
-hc:"Hyperbär",
-gears:["Pet-Power","Schaden"],
-trait:"-"
-},
-
-{
-name:"Colt", level:11, hp:5600, role:"Shooter",
-super:"Sechsschüsser",
-sp:["Slick Boots","Magnum Special"],
-gadgets:["Speedloader","Silberkugel"],
-hc:"Beidhändig",
-gears:["Nachladen","Schaden"],
-trait:"-"
-},
-
-{
-name:"Bull", level:11, hp:10000, role:"Tank",
-super:"Bulldozer",
-sp:["Berserker","Harter Kerl"],
-gadgets:["T-Bone-Injektion","Stampfer"],
-hc:"Eiserner Wille",
-gears:["Schaden","Schild"],
-trait:"Tank-Trait"
-},
-
-{
-name:"Brock", level:11, hp:4800, role:"Shooter",
-super:"Raketenregen",
-sp:["Brandraketen","Rakete Nr.4"],
-gadgets:["Raketenschnürsenkel","Megarakete"],
-hc:"Flächenbombardement",
-gears:["Nachladen","Schaden"],
-trait:"-"
-},
-
-{
-name:"El Primo", level:11, hp:12000, role:"Tank",
-super:"Flying Elbow Drop",
-sp:["El Fuego","Meteorausch"],
-gadgets:["Suplex-Wurf","Asteroidengürtel"],
-hc:"Schwerkraft-Smash",
-gears:["Tempo","Gesundheit"],
-trait:"Tank-Trait"
-},
-
-{
-name:"Barley", level:11, hp:4800, role:"Control",
-super:"Letzte Bestellung",
-sp:["Medizinisch","Extra schädlich"],
-gadgets:["Sirup","Kräuter-Tonic"],
-hc:"Flächenbrand",
-gears:["Schaden","Schild"],
-trait:"-"
-},
-
-{
-name:"Poco", level:11, hp:7400, role:"Support",
-super:"Zugabe",
-sp:["Da Capo","Kreisch"],
-gadgets:["Stimmgabel","Melodie"],
-hc:"Heilende Welle",
-gears:["Heilung","Tempo"],
-trait:"-"
-},
-
-{
-name:"Rosa", level:11, hp:10000, role:"Tank",
-super:"Ranken-Rüstung",
-sp:["Pflanzenpflege","Dornige Handschuhe"],
-gadgets:["Wachstumslicht","Gebüsch"],
-hc:"Naturzorn",
-gears:["Tempo","Schaden"],
-trait:"Tank-Trait"
-},
-
-{
-name:"Jessie", level:11, hp:6000, role:"Control",
-super:"Scrappy",
-sp:["Energie tanken","Schocky"],
-gadgets:["Zündkerze","Rückstoß"],
-hc:"Scrappy 2.0",
-gears:["Pet-Power","Schaden"],
-trait:"-"
-},
-
-{
-name:"Dynamike", level:11, hp:5600, role:"Thrower",
-super:"Riesenfass",
-sp:["Dynasprung","Demolierung"],
-gadgets:["Spinner","Satchel Charge"],
-hc:"Boomer",
-gears:["Schaden","Schild"],
-trait:"-"
-},
-
-{
-name:"Tick", level:11, hp:4400, role:"Thrower",
-super:"Kopflos",
-sp:["Geölt","Automa-Tick"],
-gadgets:["Minen-Mania","Letztes Hurra"],
-hc:"Kopfjäger",
-gears:["Schaden","Schild"],
-trait:"-"
-},
-
-{
-name:"8-Bit", level:11, hp:10000, role:"Damage",
-super:"Schadensbooster",
-sp:["Boost","Extra-Leben"],
-gadgets:["Cheat-Modul","Credits"],
-hc:"Overclock",
-gears:["Tempo","Schaden"],
-trait:"-"
-},
-
-{
-name:"Rico", level:11, hp:5600, role:"Shooter",
-super:"Trickschuss",
-sp:["Abpraller","Robo-Rückzug"],
-gadgets:["Multiball","Hüpfburg"],
-hc:"Kugelregen",
-gears:["Nachladen","Schaden"],
-trait:"-"
-},
-
-{
-name:"Darryl", level:11, hp:10600, role:"Tank",
-super:"Rollendes Fass",
-sp:["Stahlringe","Nachladen"],
-gadgets:["Teer","Rotator"],
-hc:"Sturmflut",
-gears:["Tempo","Schild"],
-trait:"Super lädt passiv auf"
-},
-
-{
-name:"Penny", level:11, hp:6400, role:"Control",
-super:"Kanonade",
-sp:["Geldsack","Meister"],
-gadgets:["Salzschuss","Fernrohr"],
-hc:"Kanone",
-gears:["Pet-Power","Schild"],
-trait:"-"
-},
-
-{
-name:"Carl", level:11, hp:8000, role:"Tank",
-super:"Wirbelwind",
-sp:["Kraftwurf","Schutz"],
-gadgets:["Hitzedüsen","Haken"],
-hc:"Tornadoschlag",
-gears:["Schaden","Schild"],
-trait:"-"
-},
-
-{
-name:"Jacky", level:11, hp:10000, role:"Tank",
-super:"Erdbeben",
-sp:["Konter","Helm"],
-gadgets:["Booster","Umbau"],
-hc:"Erdbeben",
-gears:["Tempo","Schaden"],
-trait:"Tank-Trait"
-},
-
-{
-name:"Gus", level:11, hp:6400, role:"Support",
-super:"Geisterball",
-sp:["Gesundheit","Geister"],
-gadgets:["Seelentausch","Knall"],
-hc:"Poltergeist",
-gears:["Schild","Heilung"],
-trait:"-"
-},
-
-{
-name:"Bo", level:11, hp:7200, role:"Control",
-super:"Minenfeld",
-sp:["Adlerauge","Fallen"],
-gadgets:["Totem","Sprengpfeil"],
-hc:"Minenfeld",
-gears:["Nachladen","Tempo"],
-trait:"-"
-},
-
-{
-name:"Emz", level:11, hp:7200, role:"Control",
-super:"Toxischer Nebel",
-sp:["Karma","Hype"],
-gadgets:["Säure","Friendzone"],
-hc:"Nebel",
-gears:["Schaden","Tempo"],
-trait:"-"
-},
-
-{
-name:"Stu", level:11, hp:5800, role:"Assassin",
-super:"Nitro-Boost",
-sp:["Null Reibung","Heilgas"],
-gadgets:["Speed-Zone","Durchbruch"],
-hc:"Nitro",
-gears:["Tempo","Schild"],
-trait:"-"
-},
-
-{
-name:"Pam", level:11, hp:9600, role:"Support",
-super:"Heilende Aura",
-sp:["Umarmung","Quetsche"],
-gadgets:["Puls","Schrott"],
-hc:"Aura",
-gears:["Heilung","Schild"],
-trait:"-"
-},
-
-{
-name:"Frank", level:11, hp:14000, role:"Tank",
-super:"Schockwelle",
-sp:["Power","Schwamm"],
-gadgets:["Noise","Anziehung"],
-hc:"Smash",
-gears:["Tempo","Schild"],
-trait:"Tank-Trait"
-}
+{ name:"Shelly", hp:7400, role:"Shooter", gears:["Schaden","Tempo"] },
+{ name:"Nita", hp:8000, role:"Control", gears:["Pet-Power","Schaden"] },
+{ name:"Colt", hp:5600, role:"Shooter", gears:["Nachladen","Schaden"] },
+{ name:"Bull", hp:10000, role:"Tank", gears:["Schaden","Schild"] },
+{ name:"Brock", hp:4800, role:"Shooter", gears:["Schaden"] },
+{ name:"El Primo", hp:12000, role:"Tank", gears:["Tempo"] },
+{ name:"Barley", hp:4800, role:"Control", gears:["Schaden"] },
+{ name:"Poco", hp:7400, role:"Support", gears:["Heilung"] },
+{ name:"Rosa", hp:10000, role:"Tank", gears:["Schaden"] },
+{ name:"Jessie", hp:6000, role:"Control", gears:["Pet-Power"] },
+{ name:"Dynamike", hp:5600, role:"Thrower", gears:["Schaden"] },
+{ name:"Tick", hp:4400, role:"Thrower", gears:["Schaden"] },
+{ name:"8-Bit", hp:10000, role:"Damage", gears:["Schaden"] },
+{ name:"Rico", hp:5600, role:"Shooter", gears:["Schaden"] },
+{ name:"Darryl", hp:10600, role:"Tank", gears:["Tempo"] },
+{ name:"Penny", hp:6400, role:"Control", gears:["Pet-Power"] },
+{ name:"Carl", hp:8000, role:"Tank", gears:["Schaden"] },
+{ name:"Jacky", hp:10000, role:"Tank", gears:["Tempo"] },
+{ name:"Frank", hp:14000, role:"Tank", gears:["Schild"] }
 
 ];
 
 //
 // =========================
-// ⚙️ META ENGINE
+// 🧠 META ENGINE
 // =========================
 //
 
 function meta(b){
-    return (b.hp/1000) + (b.role==="Tank"?2:0) + (b.gears.includes("Schaden")?1:0);
+    return (b.hp/1000) +
+           (b.role==="Tank"?2:0) +
+           (b.gears.includes("Schaden")?1:0);
 }
 
 function tier(m){
-    if(m>=12)return"S";
-    if(m>=10)return"A";
-    if(m>=8)return"B";
-    return"C";
+    if(m>=12) return "S";
+    if(m>=10) return "A";
+    if(m>=8) return "B";
+    return "C";
+}
+
+//
+// =========================
+// 🔍 FILTER SYSTEM
+// =========================
+//
+
+function getFiltered(){
+
+    let search = document.getElementById("search").value.toLowerCase();
+    let role = document.getElementById("roleFilter").value;
+
+    return BRAWLERS.filter(b=>{
+
+        let matchName = b.name.toLowerCase().includes(search);
+        let matchRole = role==="ALL" || b.role===role;
+
+        return matchName && matchRole;
+    });
+
 }
 
 //
@@ -332,7 +163,7 @@ function render(){
 const list=document.getElementById("list");
 list.innerHTML="";
 
-BRAWLERS
+getFiltered()
 .sort((a,b)=>meta(b)-meta(a))
 .forEach(b=>{
 
@@ -364,10 +195,9 @@ function show(b){
 
 document.getElementById("detail").innerHTML=`
 <h2>${b.name}</h2>
-<p>${b.role}</p>
+<p class="info">${b.role}</p>
 <hr>
 <p>HP: ${b.hp}</p>
-<p>Super: ${b.super}</p>
 <p class="good">Meta: ${meta(b)}</p>
 <p>Tier: ${tier(meta(b))}</p>
 `;
