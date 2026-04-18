@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Brawl Helper Tool V4</title>
+<title>Brawl Helper Tool V1.6</title>
 
 <style>
 body {
@@ -20,6 +20,7 @@ select, button {
     margin: 10px;
     border-radius: 8px;
     border: none;
+    font-size: 15px;
 }
 
 button {
@@ -29,7 +30,7 @@ button {
 }
 
 .card {
-    background: #1b1b1b;
+    background: #1c1c1c;
     padding: 20px;
     border-radius: 12px;
     margin-top: 20px;
@@ -49,8 +50,8 @@ button {
 
 <body>
 
-<h1>🔥 Brawl Helper Tool V4</h1>
-<p class="small">Meta System + Smart Counter Engine</p>
+<h1>🔥 Brawl Helper Tool V1.6</h1>
+<p class="small">Clean Structure Update</p>
 
 <select id="brawlerSelect"></select>
 <br>
@@ -61,18 +62,23 @@ button {
 <script>
 
 // =========================
-// 🎮 V4 BRAWLER SYSTEM
+// 🎮 CLEAN BRAWLER STRUCTURE
 // =========================
 
 const brawlers = [
-    { name: "Shelly", dmg: 8, rng: 4, hp: 7, spd: 6, role: "Shotgun" },
-    { name: "Colt", dmg: 9, rng: 9, hp: 4, spd: 7, role: "Shooter" },
-    { name: "Bull", dmg: 9, rng: 2, hp: 10, spd: 6, role: "Tank" },
-    { name: "Nita", dmg: 6, rng: 5, hp: 7, spd: 6, role: "Control" },
-    { name: "Piper", dmg: 10, rng: 10, hp: 3, spd: 6, role: "Sniper" },
-    { name: "Leon", dmg: 8, rng: 5, hp: 5, spd: 10, role: "Assassin" },
-    { name: "Spike", dmg: 9, rng: 7, hp: 4, spd: 7, role: "Control" }
+    createBrawler("Shelly", 8, 4, 7, 6, "Shotgun"),
+    createBrawler("Colt", 9, 9, 4, 7, "Shooter"),
+    createBrawler("Bull", 9, 2, 10, 6, "Tank"),
+    createBrawler("Nita", 6, 5, 7, 6, "Control"),
+    createBrawler("Piper", 10, 10, 3, 6, "Sniper"),
+    createBrawler("Leon", 8, 5, 5, 10, "Assassin"),
+    createBrawler("Spike", 9, 7, 4, 7, "Control")
 ];
+
+// 🧠 FACTORY FUNCTION (WICHTIG FÜR 101 BRAWLER)
+function createBrawler(name, dmg, rng, hp, spd, role) {
+    return { name, dmg, rng, hp, spd, role };
+}
 
 // =========================
 // 🔄 DROPDOWN
@@ -81,67 +87,53 @@ const brawlers = [
 const select = document.getElementById("brawlerSelect");
 
 brawlers.forEach(b => {
-    let o = document.createElement("option");
-    o.value = b.name;
-    o.innerText = b.name;
-    select.appendChild(o);
+    const opt = document.createElement("option");
+    opt.value = b.name;
+    opt.innerText = b.name;
+    select.appendChild(opt);
 });
 
 // =========================
-// 🧠 V4 META ENGINE
+// 🧠 COUNTER ENGINE (CLEAN V1.6)
 // =========================
 
 function analyze() {
 
-    const name = select.value;
-    const b = brawlers.find(x => x.name === name);
+    const b = brawlers.find(x => x.name === select.value);
 
     let strengths = [];
     let weaknesses = [];
+    let bestCounters = [];
 
     let totalScore = 0;
 
-    brawlers.forEach(enemy => {
+    for (let enemy of brawlers) {
 
-        if (enemy.name === b.name) return;
+        if (enemy.name === b.name) continue;
 
-        let score = 0;
+        let score =
+            (b.rng - enemy.rng) * 2 +
+            (b.dmg - enemy.dmg) * 1.2 +
+            (b.hp - enemy.hp) * 1.1 +
+            (b.spd - enemy.spd) * 0.5;
 
-        // 📊 BASIC STATS WEIGHTED
-        score += (b.rng - enemy.rng) * 2;
-        score += (b.dmg - enemy.dmg) * 1.2;
-        score += (b.hp - enemy.hp) * 1.1;
-        score += (b.spd - enemy.spd) * 0.5;
+        // ROLE SYSTEM CLEAN
+        if (b.role === "Tank" && enemy.role === "Sniper") score += 2;
+        if (b.role === "Sniper" && enemy.role === "Tank") score -= 2;
+        if (b.role === "Assassin" && enemy.role === "Shooter") score += 1;
 
-        // 🧠 ROLE META SYSTEM
-        const meta = {
-            "Tank": { "Sniper": 2 },
-            "Sniper": { "Tank": -2 },
-            "Assassin": { "Shooter": 1.5 },
-            "Shooter": { "Assassin": -1 }
-        };
-
-        if (meta[b.role] && meta[b.role][enemy.role]) {
-            score += meta[b.role][enemy.role];
-        }
-
-        // 📈 COLLECT TOTAL META SCORE
         totalScore += score;
 
         if (score >= 2) {
-            strengths.push(`${enemy.name} <span class="info">(+${score.toFixed(1)})</span>`);
+            strengths.push(`${enemy.name} (+${score.toFixed(1)})`);
         } 
         else if (score <= -2) {
-            weaknesses.push(`${enemy.name} <span class="info">(${score.toFixed(1)})</span>`);
+            weaknesses.push(`${enemy.name} (${score.toFixed(1)})`);
+            bestCounters.push(enemy.name);
         }
-    });
-
-    // =========================
-    // 🏆 META RATING
-    // =========================
+    }
 
     let rating = "Normal";
-
     if (totalScore > 10) rating = "🔥 OP Meta";
     else if (totalScore > 5) rating = "🟢 Strong";
     else if (totalScore < -5) rating = "🔴 Weak";
@@ -151,7 +143,7 @@ function analyze() {
 
         <p><b>Rolle:</b> ${b.role}</p>
 
-        <p class="info"><b>Meta Rating:</b> ${rating}</p>
+        <p class="info"><b>Meta:</b> ${rating}</p>
 
         <p class="good"><b>Stark gegen:</b><br>${strengths.join("<br>") || "Keine Daten"}</p>
 
@@ -159,7 +151,9 @@ function analyze() {
 
         <hr>
 
-        <p class="small">Total Meta Score: ${totalScore.toFixed(1)}</p>
+        <p class="info"><b>Beste Counter:</b><br>${bestCounters.slice(0,3).join(", ") || "Keine Daten"}</p>
+
+        <p class="small">Score: ${totalScore.toFixed(1)}</p>
     `;
 }
 
