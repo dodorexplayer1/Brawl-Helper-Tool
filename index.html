@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Brawl Helper Tool V1.6</title>
+<title>Brawl Helper Tool V1.7</title>
 
 <style>
 body {
@@ -13,12 +13,20 @@ body {
     padding: 20px;
 }
 
-h1 { color: #4dff88; }
+h1 {
+    color: #4dff88;
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    opacity: 0.7;
+    font-size: 13px;
+}
 
 select, button {
-    padding: 10px;
+    padding: 12px;
     margin: 10px;
-    border-radius: 8px;
+    border-radius: 10px;
     border: none;
     font-size: 15px;
 }
@@ -27,31 +35,53 @@ button {
     background: #4dff88;
     font-weight: bold;
     cursor: pointer;
+    color: black;
 }
 
 .card {
-    background: #1c1c1c;
-    padding: 20px;
-    border-radius: 12px;
+    background: #1a1a1a;
+    padding: 25px;
+    border-radius: 16px;
     margin-top: 20px;
     display: inline-block;
     min-width: 340px;
     max-width: 95%;
     text-align: left;
+    box-shadow: 0 0 15px rgba(77,255,136,0.1);
+}
+
+.tag {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    margin-left: 10px;
+}
+
+.op { background: #ff4d4d; }
+.strong { background: #4dff88; color: black; }
+.normal { background: #ffd24d; color: black; }
+
+.section {
+    margin-top: 10px;
 }
 
 .good { color: #4dff88; }
 .bad { color: #ff4d4d; }
 .info { color: #ffd24d; }
-.small { font-size: 12px; opacity: 0.7; }
+
+.small {
+    font-size: 12px;
+    opacity: 0.7;
+}
 </style>
 
 </head>
 
 <body>
 
-<h1>🔥 Brawl Helper Tool V1.6</h1>
-<p class="small">Clean Structure Update</p>
+<h1>🔥 Brawl Helper Tool V1.7</h1>
+<p class="subtitle">UI Upgrade + Better Experience</p>
 
 <select id="brawlerSelect"></select>
 <br>
@@ -62,21 +92,20 @@ button {
 <script>
 
 // =========================
-// 🎮 CLEAN BRAWLER STRUCTURE
+// 🎮 BRAWLER DATA
 // =========================
 
 const brawlers = [
-    createBrawler("Shelly", 8, 4, 7, 6, "Shotgun"),
-    createBrawler("Colt", 9, 9, 4, 7, "Shooter"),
-    createBrawler("Bull", 9, 2, 10, 6, "Tank"),
-    createBrawler("Nita", 6, 5, 7, 6, "Control"),
-    createBrawler("Piper", 10, 10, 3, 6, "Sniper"),
-    createBrawler("Leon", 8, 5, 5, 10, "Assassin"),
-    createBrawler("Spike", 9, 7, 4, 7, "Control")
+    create("Shelly", 8, 4, 7, 6, "Shotgun"),
+    create("Colt", 9, 9, 4, 7, "Shooter"),
+    create("Bull", 9, 2, 10, 6, "Tank"),
+    create("Nita", 6, 5, 7, 6, "Control"),
+    create("Piper", 10, 10, 3, 6, "Sniper"),
+    create("Leon", 8, 5, 5, 10, "Assassin"),
+    create("Spike", 9, 7, 4, 7, "Control")
 ];
 
-// 🧠 FACTORY FUNCTION (WICHTIG FÜR 101 BRAWLER)
-function createBrawler(name, dmg, rng, hp, spd, role) {
+function create(name, dmg, rng, hp, spd, role) {
     return { name, dmg, rng, hp, spd, role };
 }
 
@@ -87,14 +116,14 @@ function createBrawler(name, dmg, rng, hp, spd, role) {
 const select = document.getElementById("brawlerSelect");
 
 brawlers.forEach(b => {
-    const opt = document.createElement("option");
+    let opt = document.createElement("option");
     opt.value = b.name;
     opt.innerText = b.name;
     select.appendChild(opt);
 });
 
 // =========================
-// 🧠 COUNTER ENGINE (CLEAN V1.6)
+// 🧠 ANALYSE ENGINE
 // =========================
 
 function analyze() {
@@ -103,57 +132,68 @@ function analyze() {
 
     let strengths = [];
     let weaknesses = [];
-    let bestCounters = [];
+    let scoreTotal = 0;
 
-    let totalScore = 0;
+    for (let e of brawlers) {
 
-    for (let enemy of brawlers) {
-
-        if (enemy.name === b.name) continue;
+        if (e.name === b.name) continue;
 
         let score =
-            (b.rng - enemy.rng) * 2 +
-            (b.dmg - enemy.dmg) * 1.2 +
-            (b.hp - enemy.hp) * 1.1 +
-            (b.spd - enemy.spd) * 0.5;
+            (b.rng - e.rng) * 2 +
+            (b.dmg - e.dmg) * 1.2 +
+            (b.hp - e.hp) * 1.1 +
+            (b.spd - e.spd) * 0.5;
 
-        // ROLE SYSTEM CLEAN
-        if (b.role === "Tank" && enemy.role === "Sniper") score += 2;
-        if (b.role === "Sniper" && enemy.role === "Tank") score -= 2;
-        if (b.role === "Assassin" && enemy.role === "Shooter") score += 1;
+        if (b.role === "Tank" && e.role === "Sniper") score += 2;
+        if (b.role === "Sniper" && e.role === "Tank") score -= 2;
+        if (b.role === "Assassin" && e.role === "Shooter") score += 1;
 
-        totalScore += score;
+        scoreTotal += score;
 
-        if (score >= 2) {
-            strengths.push(`${enemy.name} (+${score.toFixed(1)})`);
-        } 
-        else if (score <= -2) {
-            weaknesses.push(`${enemy.name} (${score.toFixed(1)})`);
-            bestCounters.push(enemy.name);
-        }
+        if (score >= 2) strengths.push(`${e.name} (+${score.toFixed(1)})`);
+        if (score <= -2) weaknesses.push(`${e.name} (${score.toFixed(1)})`);
     }
 
-    let rating = "Normal";
-    if (totalScore > 10) rating = "🔥 OP Meta";
-    else if (totalScore > 5) rating = "🟢 Strong";
-    else if (totalScore < -5) rating = "🔴 Weak";
+    let tag = "normal";
+    let label = "Normal";
+
+    if (scoreTotal > 10) {
+        tag = "op";
+        label = "🔥 OP META";
+    }
+    else if (scoreTotal > 5) {
+        tag = "strong";
+        label = "🟢 Strong";
+    }
+    else if (scoreTotal < -5) {
+        tag = "normal";
+        label = "🔴 Weak";
+    }
 
     document.getElementById("result").innerHTML = `
-        <h2>${b.name}</h2>
+        <h2>${b.name}
+            <span class="tag ${tag}">${label}</span>
+        </h2>
 
-        <p><b>Rolle:</b> ${b.role}</p>
+        <div class="section">
+            <b>Rolle:</b> ${b.role}
+        </div>
 
-        <p class="info"><b>Meta:</b> ${rating}</p>
+        <div class="section good">
+            <b>Stark gegen:</b><br>
+            ${strengths.join("<br>") || "Keine Daten"}
+        </div>
 
-        <p class="good"><b>Stark gegen:</b><br>${strengths.join("<br>") || "Keine Daten"}</p>
-
-        <p class="bad"><b>Schwach gegen:</b><br>${weaknesses.join("<br>") || "Keine Daten"}</p>
+        <div class="section bad">
+            <b>Schwach gegen:</b><br>
+            ${weaknesses.join("<br>") || "Keine Daten"}
+        </div>
 
         <hr>
 
-        <p class="info"><b>Beste Counter:</b><br>${bestCounters.slice(0,3).join(", ") || "Keine Daten"}</p>
-
-        <p class="small">Score: ${totalScore.toFixed(1)}</p>
+        <div class="section info">
+            <b>Score:</b> ${scoreTotal.toFixed(1)}
+        </div>
     `;
 }
 
