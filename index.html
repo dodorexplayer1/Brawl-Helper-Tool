@@ -2,28 +2,33 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brawl Draft System</title>
+<title>Brawl Draft AI v3</title>
 
 <style>
 body{
   margin:0;
   font-family:Arial;
-  background:#0f172a;
+  background:linear-gradient(135deg,#0f172a,#111827);
   color:white;
 }
 
 .container{
-  max-width:800px;
+  max-width:900px;
   margin:auto;
   padding:20px;
 }
 
-input,select,button{
+h1{
+  text-align:center;
+}
+
+input,button{
   width:100%;
   padding:12px;
   margin:6px 0;
   border-radius:10px;
   border:none;
+  font-size:16px;
 }
 
 button{
@@ -36,18 +41,32 @@ button{
 .card{
   background:#111827;
   padding:15px;
-  margin-top:10px;
   border-radius:12px;
+  margin-top:10px;
 }
 
-.admin{
+.small{
+  font-size:13px;
+  opacity:0.8;
+}
+
+.adminBox{
   background:#1f2937;
-  padding:10px;
-  border-radius:10px;
+  padding:15px;
+  border-radius:12px;
   margin-top:20px;
 }
 
 .hidden{display:none;}
+
+.tag{
+  display:inline-block;
+  padding:4px 8px;
+  background:#374151;
+  border-radius:6px;
+  margin:3px;
+  font-size:12px;
+}
 </style>
 </head>
 
@@ -55,29 +74,31 @@ button{
 
 <div class="container">
 
-<h2>🎮 Brawl Draft System</h2>
+<h1>🎮 Brawl Draft AI v3</h1>
 
-<!-- USER INPUT -->
-<h3>Enemy Team</h3>
-<input id="enemy" placeholder="z.B. Piper, Bull, Mortis">
+<p class="small">Enter enemy brawlers (comma separated)</p>
 
-<button onclick="getRecommendation()">🔥 Get Best Pick</button>
+<input id="enemy" placeholder="e.g. Piper, Bull, Mortis">
+
+<button onclick="getPick()">🔥 Best Counter Pick</button>
 
 <div id="result" class="card"></div>
 
-<!-- ADMIN LOGIN -->
-<button onclick="toggleAdmin()">Admin Panel</button>
+<button onclick="toggleAdmin()">⚙ Admin Panel</button>
 
-<div id="adminPanel" class="admin hidden">
+<div id="admin" class="adminBox hidden">
 
-<h3>➕ Add / Edit Brawler</h3>
+<h3>➕ Add / Update Brawler</h3>
 
-<input id="bName" placeholder="Brawler Name">
-<input id="bRole" placeholder="Role (tank/sniper/etc)">
-<input id="bWeak" placeholder="Weak vs (comma)">
-<input id="bStrong" placeholder="Strong vs (comma)">
+<input id="name" placeholder="Name">
+<input id="role" placeholder="Role (tank/sniper/assassin/support/controller)">
+<input id="weak" placeholder="Weak vs (comma)">
+<input id="strong" placeholder="Strong vs (comma)">
+<input id="gadget" placeholder="Gadgets (comma)">
+<input id="star" placeholder="Star Powers (comma)">
+<input id="hyper" placeholder="Hypercharge">
 
-<button onclick="addBrawler()">Save Brawler</button>
+<button onclick="saveBrawler()">Save / Update</button>
 
 </div>
 
@@ -86,108 +107,133 @@ button{
 <script>
 
 /* =========================
-   DATABASE (START EMPTY BUT EXTENDABLE)
+   CORE DATABASE (STARTER + 101 READY)
 ========================= */
 
 let brawlers = [
-  {
-    name:"Shelly",
-    role:"tank_counter",
-    weak:["sniper"],
-    strong:["tank"],
-    gadgets:["Fast Forward","Clay Pigeons"],
-    starpowers:["Shell Shock","Band Aid"],
-    hypercharge:"Shock Burst"
-  },
-  {
-    name:"Piper",
-    role:"sniper",
-    weak:["assassin"],
-    strong:["tank"],
-    gadgets:["Auto Aimer","Snappy Sniping"],
-    starpowers:["Ambush","Snappy Reload"],
-    hypercharge:"Long Shot Fury"
-  },
-  {
-    name:"Mortis",
-    role:"assassin",
-    weak:["burst"],
-    strong:["sniper"],
-    gadgets:["Coiled Snake","Combo Spinner"],
-    starpowers:["Creepy Harvest","Coiled Snake"],
-    hypercharge:"Dash Storm"
-  }
+{
+name:"Shelly",
+role:"tank_counter",
+weak:["sniper"],
+strong:["tank"],
+gadgets:["Fast Forward","Clay Pigeons"],
+starpowers:["Shell Shock","Band Aid"],
+hypercharge:"Shock Blast"
+},
+{
+name:"Piper",
+role:"sniper",
+weak:["assassin"],
+strong:["tank"],
+gadgets:["Auto Aimer","Snappy Shot"],
+starpowers:["Ambush","Snappy Reload"],
+hypercharge:"Long Shot Fury"
+},
+{
+name:"Mortis",
+role:"assassin",
+weak:["burst"],
+strong:["sniper"],
+gadgets:["Coiled Snake","Combo Spinner"],
+starpowers:["Creepy Harvest","Coiled Snake"],
+hypercharge:"Shadow Dash"
+}
 ];
 
 /* =========================
-   FIND BRAWLER
+   FIND FUNCTION
 ========================= */
 
 function find(name){
-  return brawlers.find(b =>
-    b.name.toLowerCase() === name.toLowerCase()
-  );
+return brawlers.find(b =>
+b.name.toLowerCase() === name.toLowerCase()
+);
 }
 
 /* =========================
-   RECOMMENDATION ENGINE
+   AI PICK SYSTEM
 ========================= */
 
-function getRecommendation(){
+function getPick(){
 
 let enemies = enemy.value.toLowerCase().split(",");
 
-let best = "Spike (default pick)";
-let reason = "Balanced allrounder";
+let best = "Spike (default)";
+let reason = "Balanced pick for most situations";
+
+let scoreMap = {};
 
 for(let e of enemies){
 e = e.trim();
 
-for(let b of brawlers){
-if(b.weak.includes(e)){
-best = b.name;
-reason = "Strong counter vs "+e;
+brawlers.forEach(b => {
+
+if(!scoreMap[b.name]) scoreMap[b.name] = 0;
+
+if(b.weak.includes(e)) scoreMap[b.name] += 3;
+if(b.strong.includes(e)) scoreMap[b.name] += 1;
+
+});
+
 }
+
+/* FIND BEST SCORE */
+let top = 0;
+
+for(let b in scoreMap){
+if(scoreMap[b] > top){
+top = scoreMap[b];
+best = b;
 }
 }
 
-result.innerHTML =
-"🔥 Best Pick: <b>"+best+"</b><br><br>"+reason;
+reason = "Counter advantage score: "+top;
+
+let b = find(best);
+
+result.innerHTML = `
+🔥 Best Pick: <b>${best}</b><br><br>
+🧠 ${reason}<br><br>
+
+<span class="tag">Role: ${b?.role || "unknown"}</span><br>
+<span class="tag">Gadgets: ${(b?.gadgets||[]).join(", ")}</span><br>
+<span class="tag">Star Powers: ${(b?.starpowers||[]).join(", ")}</span><br>
+<span class="tag">Hypercharge: ${b?.hypercharge || "none"}</span>
+`;
+
 }
 
 /* =========================
-   ADMIN PANEL
+   ADMIN SYSTEM
 ========================= */
 
 function toggleAdmin(){
-adminPanel.classList.toggle("hidden");
+admin.classList.toggle("hidden");
 }
 
-function addBrawler(){
+function saveBrawler(){
 
-let name = bName.value;
-let role = bRole.value;
-let weak = bWeak.value.split(",");
-let strong = bStrong.value.split(",");
+let newB = {
+name:name.value,
+role:role.value,
+weak:weak.value.split(",").map(x=>x.trim()),
+strong:strong.value.split(",").map(x=>x.trim()),
+gadgets:gadget.value.split(",").map(x=>x.trim()),
+starpowers:star.value.split(",").map(x=>x.trim()),
+hypercharge:hyper.value
+};
 
-brawlers.push({
-name,
-role,
-weak,
-strong,
-gadgets:[],
-starpowers:[],
-hypercharge:""
-});
+let existing = find(newB.name);
 
-alert("Brawler added!");
+if(existing){
+Object.assign(existing,newB);
+alert("Updated!");
+}else{
+brawlers.push(newB);
+alert("Added!");
 }
 
-/* =========================
-   AUTO LOAD SAMPLE SYSTEM READY FOR 101 BRAWLERS
-========================= */
-
-console.log("System ready. Add up to 101 brawlers.");
+}
 
 </script>
 
