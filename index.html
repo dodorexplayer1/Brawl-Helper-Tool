@@ -1,277 +1,87 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<title>Brawl Helper Tool V8.2</title>
+/* =========================
+   🔥 COUNTER SYSTEM
+========================= */
 
-<style>
-body{
-font-family:Arial;
-background:#0a0a0a;
-color:white;
-margin:0;
-}
-
-.nav{
-display:flex;
-justify-content:space-around;
-background:#111;
-padding:10px;
-position:sticky;
-top:0;
-}
-
-.nav button{
-background:#1b1b1b;
-color:white;
-border:none;
-padding:10px;
-border-radius:8px;
-cursor:pointer;
-}
-
-.page{display:none;padding:20px;}
-.active{display:block;}
-
-.card{
-background:#1b1b1b;
-padding:15px;
-border-radius:12px;
-margin:10px;
-}
-
-.good{color:#4dff88;}
-.bad{color:#ff4d4d;}
-.info{color:#ffd24d;}
-.small{font-size:12px;color:#aaa;}
-
-.tag{
-padding:3px 8px;
-border-radius:6px;
-background:#333;
-margin-left:5px;
-font-size:12px;
-}
-</style>
-
-</head>
-
-<body>
-
-<div class="nav">
-<button onclick="go('home')">🏠 Home</button>
-<button onclick="go('match')">⚔️ Match</button>
-<button onclick="go('team')">🧑‍🤝‍🧑 Team Finder</button>
-<button onclick="go('job')">📢 Jobs</button>
-<button onclick="go('profile')">👤 Profile</button>
-</div>
-
-<h2 style="text-align:center;color:#4dff88;">🔥 Brawl Helper Tool V8.2</h2>
-
-<!-- HOME -->
-<div id="home" class="page active">
-
-<div class="card">
-<h3>🌐 SERVER STATUS</h3>
-<p id="tick">Tick: 0</p>
-<p id="status">Online</p>
-</div>
-
-</div>
-
-<!-- MATCH -->
-<div id="match" class="page">
-
-<div class="card">
-<h3>⚔️ QUICK MATCH</h3>
-
-<select id="a"></select>
-<select id="b"></select>
-
-<button onclick="startMatch()">Start Match</button>
-
-<div id="matchBox"></div>
-
-</div>
-
-</div>
-
-<!-- TEAM FINDER -->
-<div id="team" class="page">
-
-<div class="card">
-<h3>🧑‍🤝‍🧑 TEAM FINDER (LFG)</h3>
-
-<input id="jobTitle" placeholder="z.B. Suche 2 Pro Spieler für Ranked">
-<br><br>
-
-<select id="rank">
-<option>Beginner</option>
-<option>Pro</option>
-<option>Master</option>
-<option>Elite</option>
-</select>
-
-<button onclick="postJob()">Job posten</button>
-
-<div id="jobBoard"></div>
-
-</div>
-
-</div>
-
-<!-- JOB FEED -->
-<div id="job" class="page">
-
-<div class="card">
-<h3>📢 LIVE JOB FEED</h3>
-<div id="feed"></div>
-</div>
-
-</div>
-
-<!-- PROFILE -->
-<div id="profile" class="page">
-
-<div class="card">
-<h3>👤 PLAYER PROFILE</h3>
-
-<p>Name: Player_1 <span class="tag">MASTER</span></p>
-<p>Status: Looking for Team</p>
-
-<button onclick="setStatus('Looking')">Looking for Team</button>
-<button onclick="setStatus('In Match')">In Match</button>
-
-</div>
-
-</div>
-
-<script>
-
-/* SERVER */
-let SERVER={
-jobs:[],
-tick:0
+const COUNTERS = {
+"Shelly": ["Colt", "Brock"],
+"Nita": ["Brock", "Colt"],
+"Colt": ["Bull", "Edgar"],
+"Bull": ["Shelly", "Jessie"],
+"Brock": ["Edgar", "Mortis"],
+"El Primo": ["Shelly", "Colette"],
+"Barley": ["Edgar", "Crow"],
+"Poco": ["Sniper Class (Colt, Brock)"],
+"Rosa": ["Colt", "Spike"],
+"Jessie": ["Piper", "Brock"]
 };
 
-/* PLAYERS */
-let PLAYERS=[
-{name:"Shelly",rank:"Pro"},
-{name:"Colt",rank:"Master"},
-{name:"Bull",rank:"Elite"},
-{name:"Poco",rank:"Beginner"}
-];
+/* =========================
+   🧠 META SYSTEM
+========================= */
 
-/* NAV */
-function go(id){
-document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-document.getElementById(id).classList.add("active");
-}
-
-/* TICK */
-setInterval(()=>{
-
-SERVER.tick++;
-
-tick.innerHTML="Tick: "+SERVER.tick;
-
-status.innerHTML="Online ✔";
-
-renderJobs();
-
-},500);
-
-/* MATCH */
-function startMatch(){
-
-let A=a.value;
-let B=b.value;
-
-matchBox.innerHTML=`
-<div class="card">
-⚔️ MATCH STARTED<br>
-${A} vs ${B}
-</div>
-`;
-
-}
-
-/* JOB SYSTEM */
-function postJob(){
-
-let job={
-title:jobTitle.value,
-rank:rank.value,
-id:Math.random().toString(36).substr(2,5)
+const META = {
+"Shelly": "Tank Killer / Close Range",
+"Nita": "Control / Summoner",
+"Colt": "Long Range DPS",
+"Bull": "Assassin Tank",
+"Brock": "Sniper / Zone Control",
+"El Primo": "Pure Tank Engage",
+"Barley": "Area Control",
+"Poco": "Support Healer",
+"Rosa": "Bush Tank",
+"Jessie": "Control / Hybrid"
 };
 
-SERVER.jobs.push(job);
+/* =========================
+   🧑‍🤝‍🧑 TEAM BUILDER
+========================= */
 
-feed.innerHTML="New Job Posted ✔";
+function buildTeam(brawlerList){
 
-renderJobs();
+let team = {
+tank: null,
+dps: null,
+support: null
+};
 
-}
+brawlerList.forEach(b => {
 
-/* RENDER JOBS */
-function renderJobs(){
+let role = META[b];
 
-jobBoard.innerHTML=SERVER.jobs.map(j=>`
-<div class="card">
-📢 ${j.title}<br>
-🏷️ Rank Needed: ${j.rank}<br>
-<button onclick="apply('${j.id}')">Apply</button>
-</div>
-`).join("");
-
-feed.innerHTML=SERVER.jobs.map(j=>`🟢 ${j.title}`).join("<br>");
-
-}
-
-/* APPLY SYSTEM */
-function apply(id){
-
-let job=SERVER.jobs.find(j=>j.id===id);
-
-if(job){
-
-feed.innerHTML="Applied to: "+job.title;
-
-}
-
-}
-
-/* PROFILE STATUS */
-function setStatus(s){
-
-status.innerHTML="Status: "+s;
-
-}
-
-init();
-
-/* INIT */
-function init(){
-
-a.innerHTML="";
-b.innerHTML="";
-
-PLAYERS.forEach(p=>{
-
-let o1=document.createElement("option");
-o1.value=p.name;
-o1.text=p.name;
-
-let o2=o1.cloneNode(true);
-
-a.appendChild(o1);
-b.appendChild(o2);
+if(role.includes("Tank")) team.tank = b;
+if(role.includes("DPS") || role.includes("Sniper")) team.dps = b;
+if(role.includes("Support") || role.includes("Healer")) team.support = b;
 
 });
 
+return team;
+
 }
 
-</script>
+/* =========================
+   ⚔️ COUNTER CHECK
+========================= */
 
-</body>
-</html>
+function getCounters(name){
+
+return COUNTERS[name] || ["Unknown Counter Data"];
+
+}
+
+/* =========================
+   📊 META RANK CHECK
+========================= */
+
+function getMetaRole(name){
+
+return META[name] || "Unknown Meta Role";
+
+}
+
+/* =========================
+   🧪 TEST EXAMPLE
+========================= */
+
+// Example usage:
+console.log("Counters of Shelly:", getCounters("Shelly"));
+console.log("Meta Role:", getMetaRole("Colt"));
