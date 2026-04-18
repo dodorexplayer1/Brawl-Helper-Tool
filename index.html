@@ -1,240 +1,154 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brawl Draft AI v3</title>
+<meta charset="UTF-8">
+<title>Brawl Helper Counter System</title>
 
 <style>
-body{
-  margin:0;
-  font-family:Arial;
-  background:linear-gradient(135deg,#0f172a,#111827);
-  color:white;
+body {
+    font-family: Arial;
+    background: #111;
+    color: white;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
 }
 
-.container{
-  max-width:900px;
-  margin:auto;
-  padding:20px;
+h1 {
+    margin-bottom: 10px;
 }
 
-h1{
-  text-align:center;
+.container {
+    margin-top: 20px;
 }
 
-input,button{
-  width:100%;
-  padding:12px;
-  margin:6px 0;
-  border-radius:10px;
-  border:none;
-  font-size:16px;
+select, button {
+    padding: 10px;
+    margin: 10px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: none;
 }
 
-button{
-  background:#3b82f6;
-  color:white;
-  font-weight:bold;
-  cursor:pointer;
+button {
+    cursor: pointer;
+    background: #4dff88;
+    color: black;
+    font-weight: bold;
 }
 
-.card{
-  background:#111827;
-  padding:15px;
-  border-radius:12px;
-  margin-top:10px;
+.card {
+    background: #222;
+    padding: 15px;
+    margin-top: 20px;
+    border-radius: 10px;
+    display: inline-block;
+    min-width: 320px;
+    max-width: 90%;
 }
 
-.small{
-  font-size:13px;
-  opacity:0.8;
+.good {
+    color: #4dff88;
 }
 
-.adminBox{
-  background:#1f2937;
-  padding:15px;
-  border-radius:12px;
-  margin-top:20px;
-}
-
-.hidden{display:none;}
-
-.tag{
-  display:inline-block;
-  padding:4px 8px;
-  background:#374151;
-  border-radius:6px;
-  margin:3px;
-  font-size:12px;
+.bad {
+    color: #ff4d4d;
 }
 </style>
+
 </head>
 
 <body>
 
+<h1>🔥 Brawl Counter System</h1>
+
 <div class="container">
 
-<h1>🎮 Brawl Draft AI v3</h1>
+    <h3>Wähle deinen Brawler</h3>
 
-<p class="small">Enter enemy brawlers (comma separated)</p>
+    <select id="brawlerSelect"></select>
 
-<input id="enemy" placeholder="e.g. Piper, Bull, Mortis">
+    <br>
 
-<button onclick="getPick()">🔥 Best Counter Pick</button>
+    <button onclick="analyze()">Analyse starten</button>
 
-<div id="result" class="card"></div>
-
-<button onclick="toggleAdmin()">⚙ Admin Panel</button>
-
-<div id="admin" class="adminBox hidden">
-
-<h3>➕ Add / Update Brawler</h3>
-
-<input id="name" placeholder="Name">
-<input id="role" placeholder="Role (tank/sniper/assassin/support/controller)">
-<input id="weak" placeholder="Weak vs (comma)">
-<input id="strong" placeholder="Strong vs (comma)">
-<input id="gadget" placeholder="Gadgets (comma)">
-<input id="star" placeholder="Star Powers (comma)">
-<input id="hyper" placeholder="Hypercharge">
-
-<button onclick="saveBrawler()">Save / Update</button>
-
-</div>
+    <div id="result" class="card">Wähle einen Brawler und starte Analyse</div>
 
 </div>
 
 <script>
+// =========================
+// 🎮 BRAWLER DATEN (EINFACH ERWEITERBAR)
+// =========================
 
-/* =========================
-   CORE DATABASE (STARTER + 101 READY)
-========================= */
-
-let brawlers = [
-{
-name:"Shelly",
-role:"tank_counter",
-weak:["sniper"],
-strong:["tank"],
-gadgets:["Fast Forward","Clay Pigeons"],
-starpowers:["Shell Shock","Band Aid"],
-hypercharge:"Shock Blast"
-},
-{
-name:"Piper",
-role:"sniper",
-weak:["assassin"],
-strong:["tank"],
-gadgets:["Auto Aimer","Snappy Shot"],
-starpowers:["Ambush","Snappy Reload"],
-hypercharge:"Long Shot Fury"
-},
-{
-name:"Mortis",
-role:"assassin",
-weak:["burst"],
-strong:["sniper"],
-gadgets:["Coiled Snake","Combo Spinner"],
-starpowers:["Creepy Harvest","Coiled Snake"],
-hypercharge:"Shadow Dash"
-}
+const brawlers = [
+    { name: "Shelly", damage: 8, range: 4, hp: 7, speed: 6, role: "Shotgun" },
+    { name: "Colt", damage: 9, range: 9, hp: 4, speed: 7, role: "Shooter" },
+    { name: "Bull", damage: 9, range: 2, hp: 10, speed: 6, role: "Tank" },
+    { name: "Nita", damage: 6, range: 5, hp: 7, speed: 6, role: "Control" },
+    { name: "Piper", damage: 10, range: 10, hp: 3, speed: 6, role: "Sniper" }
 ];
 
-/* =========================
-   FIND FUNCTION
-========================= */
+// =========================
+// 🔄 DROPDOWN FÜLLEN
+// =========================
 
-function find(name){
-return brawlers.find(b =>
-b.name.toLowerCase() === name.toLowerCase()
-);
-}
-
-/* =========================
-   AI PICK SYSTEM
-========================= */
-
-function getPick(){
-
-let enemies = enemy.value.toLowerCase().split(",");
-
-let best = "Spike (default)";
-let reason = "Balanced pick for most situations";
-
-let scoreMap = {};
-
-for(let e of enemies){
-e = e.trim();
+const select = document.getElementById("brawlerSelect");
 
 brawlers.forEach(b => {
-
-if(!scoreMap[b.name]) scoreMap[b.name] = 0;
-
-if(b.weak.includes(e)) scoreMap[b.name] += 3;
-if(b.strong.includes(e)) scoreMap[b.name] += 1;
-
+    const option = document.createElement("option");
+    option.value = b.name;
+    option.innerText = b.name;
+    select.appendChild(option);
 });
 
+// =========================
+// 🧠 COUNTER SYSTEM LOGIK
+// =========================
+
+function analyze() {
+    const name = select.value;
+    const b = brawlers.find(x => x.name === name);
+
+    let strengths = [];
+    let weaknesses = [];
+
+    brawlers.forEach(enemy => {
+        if (enemy.name === b.name) return;
+
+        let score = 0;
+
+        // Range Vorteil
+        if (b.range > enemy.range) score += 2;
+        else score -= 2;
+
+        // Damage Vergleich
+        if (b.damage > enemy.damage) score += 1;
+        else score -= 1;
+
+        // HP Vergleich
+        if (b.hp > enemy.hp) score += 1;
+        else score -= 1;
+
+        // Speed leicht berücksichtigen
+        if (b.speed > enemy.speed) score += 0.5;
+        else score -= 0.5;
+
+        if (score >= 2) {
+            strengths.push(enemy.name);
+        } else if (score <= -2) {
+            weaknesses.push(enemy.name);
+        }
+    });
+
+    document.getElementById("result").innerHTML = `
+        <h2>${b.name}</h2>
+        <p><b>Rolle:</b> ${b.role}</p>
+
+        <p class="good"><b>Stark gegen:</b> ${strengths.join(", ") || "Keine Daten"}</p>
+        <p class="bad"><b>Schwach gegen:</b> ${weaknesses.join(", ") || "Keine Daten"}</p>
+    `;
 }
-
-/* FIND BEST SCORE */
-let top = 0;
-
-for(let b in scoreMap){
-if(scoreMap[b] > top){
-top = scoreMap[b];
-best = b;
-}
-}
-
-reason = "Counter advantage score: "+top;
-
-let b = find(best);
-
-result.innerHTML = `
-🔥 Best Pick: <b>${best}</b><br><br>
-🧠 ${reason}<br><br>
-
-<span class="tag">Role: ${b?.role || "unknown"}</span><br>
-<span class="tag">Gadgets: ${(b?.gadgets||[]).join(", ")}</span><br>
-<span class="tag">Star Powers: ${(b?.starpowers||[]).join(", ")}</span><br>
-<span class="tag">Hypercharge: ${b?.hypercharge || "none"}</span>
-`;
-
-}
-
-/* =========================
-   ADMIN SYSTEM
-========================= */
-
-function toggleAdmin(){
-admin.classList.toggle("hidden");
-}
-
-function saveBrawler(){
-
-let newB = {
-name:name.value,
-role:role.value,
-weak:weak.value.split(",").map(x=>x.trim()),
-strong:strong.value.split(",").map(x=>x.trim()),
-gadgets:gadget.value.split(",").map(x=>x.trim()),
-starpowers:star.value.split(",").map(x=>x.trim()),
-hypercharge:hyper.value
-};
-
-let existing = find(newB.name);
-
-if(existing){
-Object.assign(existing,newB);
-alert("Updated!");
-}else{
-brawlers.push(newB);
-alert("Added!");
-}
-
-}
-
 </script>
 
 </body>
