@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brawl Draft Tool</title>
+<title>Brawl Draft System</title>
 
 <style>
 body{
@@ -13,23 +13,17 @@ body{
 }
 
 .container{
-  max-width:600px;
+  max-width:800px;
   margin:auto;
   padding:20px;
-  text-align:center;
 }
 
-h1{
-  margin-top:10px;
-}
-
-input,button{
+input,select,button{
   width:100%;
   padding:12px;
-  margin:8px 0;
-  border-radius:8px;
+  margin:6px 0;
+  border-radius:10px;
   border:none;
-  font-size:16px;
 }
 
 button{
@@ -39,18 +33,21 @@ button{
   cursor:pointer;
 }
 
-.box{
+.card{
   background:#111827;
   padding:15px;
-  margin-top:15px;
-  border-radius:10px;
-  min-height:50px;
+  margin-top:10px;
+  border-radius:12px;
 }
 
-hr{
-  border:1px solid #1f2937;
-  margin:20px 0;
+.admin{
+  background:#1f2937;
+  padding:10px;
+  border-radius:10px;
+  margin-top:20px;
 }
+
+.hidden{display:none;}
 </style>
 </head>
 
@@ -58,76 +55,139 @@ hr{
 
 <div class="container">
 
-<h1>🎮 Brawl Draft Assistant</h1>
+<h2>🎮 Brawl Draft System</h2>
 
-<p>Enter enemy team:</p>
+<!-- USER INPUT -->
+<h3>Enemy Team</h3>
+<input id="enemy" placeholder="z.B. Piper, Bull, Mortis">
 
-<input id="e1" placeholder="Enemy 1">
-<input id="e2" placeholder="Enemy 2">
-<input id="e3" placeholder="Enemy 3">
+<button onclick="getRecommendation()">🔥 Get Best Pick</button>
 
-<button onclick="bestPick()">🔥 Find Best Counter Pick</button>
+<div id="result" class="card"></div>
 
-<div id="result" class="box">Result will appear here</div>
+<!-- ADMIN LOGIN -->
+<button onclick="toggleAdmin()">Admin Panel</button>
 
-<hr>
+<div id="adminPanel" class="admin hidden">
 
-<h2>🤝 Team Combo Assist</h2>
+<h3>➕ Add / Edit Brawler</h3>
 
-<p>Your team picks:</p>
+<input id="bName" placeholder="Brawler Name">
+<input id="bRole" placeholder="Role (tank/sniper/etc)">
+<input id="bWeak" placeholder="Weak vs (comma)">
+<input id="bStrong" placeholder="Strong vs (comma)">
 
-<input id="t1" placeholder="Your Brawler 1">
-<input id="t2" placeholder="Your Brawler 2">
+<button onclick="addBrawler()">Save Brawler</button>
 
-<button onclick="bestTeam()">⚡ Find Best Team</button>
-
-<div id="team" class="box">Team result will appear here</div>
+</div>
 
 </div>
 
 <script>
 
-function bestPick(){
+/* =========================
+   DATABASE (START EMPTY BUT EXTENDABLE)
+========================= */
 
-let enemies = (e1.value+" "+e2.value+" "+e3.value).toLowerCase();
+let brawlers = [
+  {
+    name:"Shelly",
+    role:"tank_counter",
+    weak:["sniper"],
+    strong:["tank"],
+    gadgets:["Fast Forward","Clay Pigeons"],
+    starpowers:["Shell Shock","Band Aid"],
+    hypercharge:"Shock Burst"
+  },
+  {
+    name:"Piper",
+    role:"sniper",
+    weak:["assassin"],
+    strong:["tank"],
+    gadgets:["Auto Aimer","Snappy Sniping"],
+    starpowers:["Ambush","Snappy Reload"],
+    hypercharge:"Long Shot Fury"
+  },
+  {
+    name:"Mortis",
+    role:"assassin",
+    weak:["burst"],
+    strong:["sniper"],
+    gadgets:["Coiled Snake","Combo Spinner"],
+    starpowers:["Creepy Harvest","Coiled Snake"],
+    hypercharge:"Dash Storm"
+  }
+];
 
-let pick="Spike";
-let reason="Strong allround pick";
+/* =========================
+   FIND BRAWLER
+========================= */
 
-if(enemies.includes("bull")){
-pick="Shelly";
-reason="Counters tanks very well";
+function find(name){
+  return brawlers.find(b =>
+    b.name.toLowerCase() === name.toLowerCase()
+  );
 }
-else if(enemies.includes("bibi")){
-pick="Piper";
-reason="Good range advantage";
+
+/* =========================
+   RECOMMENDATION ENGINE
+========================= */
+
+function getRecommendation(){
+
+let enemies = enemy.value.toLowerCase().split(",");
+
+let best = "Spike (default pick)";
+let reason = "Balanced allrounder";
+
+for(let e of enemies){
+e = e.trim();
+
+for(let b of brawlers){
+if(b.weak.includes(e)){
+best = b.name;
+reason = "Strong counter vs "+e;
 }
-else if(enemies.includes("mortis")){
-pick="Colt";
-reason="High damage + control";
 }
-
-result.innerHTML="🔥 Best Pick: "+pick+"<br>🧠 "+reason;
-}
-
-function bestTeam(){
-
-let team = (t1.value+" "+t2.value).toLowerCase();
-
-let combo="Spike + Pam + Gene";
-let reason="Strong control + support + damage";
-
-if(team.includes("tank")){
-combo="Tank + Support + DPS";
-reason="Balanced team setup";
-}
-else if(team.includes("sniper")){
-combo="Double support + control";
-reason="Safe long-range control";
 }
 
-team.innerHTML="🤝 Best Team: "+combo+"<br>🧠 "+reason;
+result.innerHTML =
+"🔥 Best Pick: <b>"+best+"</b><br><br>"+reason;
 }
+
+/* =========================
+   ADMIN PANEL
+========================= */
+
+function toggleAdmin(){
+adminPanel.classList.toggle("hidden");
+}
+
+function addBrawler(){
+
+let name = bName.value;
+let role = bRole.value;
+let weak = bWeak.value.split(",");
+let strong = bStrong.value.split(",");
+
+brawlers.push({
+name,
+role,
+weak,
+strong,
+gadgets:[],
+starpowers:[],
+hypercharge:""
+});
+
+alert("Brawler added!");
+}
+
+/* =========================
+   AUTO LOAD SAMPLE SYSTEM READY FOR 101 BRAWLERS
+========================= */
+
+console.log("System ready. Add up to 101 brawlers.");
 
 </script>
 
