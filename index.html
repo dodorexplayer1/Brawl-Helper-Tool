@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Brawl Helper Tool V3.5</title>
+<title>Brawl Helper Tool V3.9</title>
 
 <style>
 body {
@@ -40,6 +40,8 @@ button {
     text-align: left;
 }
 
+.history { margin-top: 20px; }
+
 .good { color: #4dff88; }
 .bad { color: #ff4d4d; }
 .info { color: #ffd24d; }
@@ -54,54 +56,55 @@ button {
 
 <body>
 
-<h1>🔥 Brawl Helper Tool V3.5</h1>
-<p class="small">Team Builder System (3v3 Meta)</p>
+<h1>🔥 Brawl Helper Tool V3.9</h1>
+<p class="small">Pre-Release Version</p>
 
 <div id="team"></div>
 
-<button onclick="analyzeTeam()">Team Analyse</button>
+<button onclick="saveTeam()">💾 Speichern</button>
+<button onclick="analyze()">Analyse</button>
+<button onclick="resetTeam()">Reset</button>
 
 <div id="result" class="card">Wähle dein Team</div>
+
+<div class="card history">
+    <h3>🧠 Letzte Teams</h3>
+    <div id="history"></div>
+</div>
 
 <script>
 
 //
 // =========================
-// 📦 BRAWLER DATA
+// 📦 DATA (weniger random → stabiler)
 // =========================
 //
 
 const BRAWLERS = [
-    create("Shelly", "Shotgun"),
-    create("Colt", "Shooter"),
-    create("Bull", "Tank"),
-    create("Nita", "Control"),
-    create("Piper", "Sniper"),
-    create("Leon", "Assassin"),
-    create("Spike", "Control")
+    create("Shelly", "Shotgun", 7),
+    create("Colt", "Shooter", 8),
+    create("Bull", "Tank", 9),
+    create("Nita", "Control", 7),
+    create("Piper", "Sniper", 9),
+    create("Leon", "Assassin", 8),
+    create("Spike", "Control", 8)
 ];
 
-function create(name, role) {
+function create(name, role, power) {
     return {
         name,
         role,
-        stats: {
-            dmg: Math.random()*10,
-            rng: Math.random()*10,
-            hp: Math.random()*10,
-            spd: Math.random()*10
-        }
+        power
     };
 }
 
 //
 // =========================
-// 🧩 TEAM SELECTOR UI
+// 🧩 UI
 // =========================
 //
 
 const teamDiv = document.getElementById("team");
-
 let selects = [];
 
 for (let i = 0; i < 3; i++) {
@@ -121,25 +124,66 @@ for (let i = 0; i < 3; i++) {
 
 //
 // =========================
-// 🧠 TEAM ENGINE V3.5
+// 💾 HISTORY
 // =========================
 //
 
-function analyzeTeam() {
+function loadHistory() {
+
+    let history = JSON.parse(localStorage.getItem("history") || "[]");
+
+    const div = document.getElementById("history");
+    div.innerHTML = "";
+
+    history.forEach(team => {
+
+        let btn = document.createElement("button");
+        btn.innerText = team.join(", ");
+
+        btn.onclick = () => {
+            team.forEach((name, i) => selects[i].value = name);
+        };
+
+        div.appendChild(btn);
+    });
+}
+
+function saveTeam() {
+
+    let team = selects.map(s => s.value);
+
+    let history = JSON.parse(localStorage.getItem("history") || "[]");
+
+    history.unshift(team);
+    history = history.slice(0, 5);
+
+    localStorage.setItem("history", JSON.stringify(history));
+
+    loadHistory();
+}
+
+function resetTeam() {
+    selects.forEach(s => s.selectedIndex = 0);
+}
+
+//
+// =========================
+// 🧠 ANALYSE V3.9
+// =========================
+//
+
+function analyze() {
 
     let team = selects.map(s =>
         BRAWLERS.find(b => b.name === s.value)
     );
 
     let roles = {};
-    let score = 0;
+    let baseScore = 0;
 
     for (let b of team) {
-
         roles[b.role] = (roles[b.role] || 0) + 1;
-
-        // base team power
-        score += (b.stats.dmg + b.stats.rng + b.stats.hp + b.stats.spd) / 4;
+        baseScore += b.power;
     }
 
     // =========================
@@ -148,16 +192,32 @@ function analyzeTeam() {
 
     let synergy = 0;
 
-    // Tank + Support synergy
     if (roles["Tank"] && roles["Control"]) synergy += 5;
+    if (roles["Assassin"]) synergy += 3;
+    if (roles["Sniper"] && roles["Tank"]) synergy += 2;
 
-    // Assassin comp bonus
-    if (roles["Assassin"] >= 1) synergy += 3;
+    // =========================
+    // ⚠️ PROBLEME
+    // =========================
 
-    // Sniper protection needed check
-    if (roles["Sniper"] && !roles["Tank"]) synergy -= 3;
+    let issues = [];
 
-    let total = score + synergy;
+    if (!roles["Tank"]) issues.push("Kein Tank");
+    if (!roles["Sniper"]) issues.push("Kein Sniper");
+    if (roles["Sniper"] && !roles["Tank"]) issues.push("Sniper ohne Schutz");
+
+    // =========================
+    // 🤖 BEST ROLE RECOMMENDATION
+    // =========================
+
+    let recommend = "Balanced";
+
+    if (!roles["Tank"]) recommend = "👉 Tank hinzufügen";
+    else if (!roles["Sniper"]) recommend = "👉 Sniper hinzufügen";
+    else if (!roles["Control"]) recommend = "👉 Control fehlt";
+    else if (!roles["Assassin"]) recommend = "👉 Assassin optional";
+
+    let total = baseScore + synergy;
 
     let rating = "Normal";
 
@@ -168,27 +228,31 @@ function analyzeTeam() {
     document.getElementById("result").innerHTML = `
         <h2>Team Analyse</h2>
 
-        <p class="info"><b>Team Rating:</b> ${rating}</p>
+        <p class="info"><b>Rating:</b> ${rating}</p>
 
-        <p><b>Rollen:</b><br>
-        ${team.map(t => t.role).join(", ")}
+        <hr>
+
+        <p class="good"><b>Base Power:</b> ${baseScore}</p>
+        <p class="info"><b>Synergy:</b> +${synergy}</p>
+        <p class="info"><b>Total:</b> ${total}</p>
+
+        <hr>
+
+        <p class="bad"><b>Probleme:</b><br>
+        ${issues.length ? issues.join("<br>") : "Keine"}
         </p>
 
         <hr>
 
-        <p class="good"><b>Team Power:</b> ${score.toFixed(1)}</p>
-
-        <p class="info"><b>Synergy Bonus:</b> ${synergy}</p>
-
-        <p class="bad"><b>Weakness Check:</b>
-        ${roles["Sniper"] && !roles["Tank"] ? "Keine Tank-Protection!" : "OK"}
-        </p>
+        <p class="info"><b>Empfehlung:</b><br>${recommend}</p>
 
         <hr>
 
-        <p class="small">V3.5 Team System Active</p>
+        <p class="small">V3.9 Pre-Release System</p>
     `;
 }
+
+loadHistory();
 
 </script>
 
