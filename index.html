@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Brawl Helper Tool V3</title>
+<title>Brawl Helper Tool V3.5</title>
 
 <style>
 body {
@@ -54,153 +54,139 @@ button {
 
 <body>
 
-<h1>🔥 Brawl Helper Tool V3</h1>
-<p class="small">Full Loadout + Data Architecture</p>
+<h1>🔥 Brawl Helper Tool V3.5</h1>
+<p class="small">Team Builder System (3v3 Meta)</p>
 
-<div id="app"></div>
+<div id="team"></div>
 
-<div id="result" class="card">Wähle einen Brawler</div>
+<button onclick="analyzeTeam()">Team Analyse</button>
+
+<div id="result" class="card">Wähle dein Team</div>
 
 <script>
 
 //
 // =========================
-// 📦 BRAWLER DATABASE V3
+// 📦 BRAWLER DATA
 // =========================
-// 👉 101+ ready Struktur
 //
 
 const BRAWLERS = [
-    create("Shelly", 8, 4, 7, 6, "Shotgun"),
-    create("Colt", 9, 9, 4, 7, "Shooter"),
-    create("Bull", 9, 2, 10, 6, "Tank"),
-    create("Nita", 6, 5, 7, 6, "Control"),
-    create("Piper", 10, 10, 3, 6, "Sniper"),
-    create("Leon", 8, 5, 5, 10, "Assassin"),
-    create("Spike", 9, 7, 4, 7, "Control")
+    create("Shelly", "Shotgun"),
+    create("Colt", "Shooter"),
+    create("Bull", "Tank"),
+    create("Nita", "Control"),
+    create("Piper", "Sniper"),
+    create("Leon", "Assassin"),
+    create("Spike", "Control")
 ];
 
-function create(name, dmg, rng, hp, spd, role) {
+function create(name, role) {
     return {
         name,
-        stats: { dmg, rng, hp, spd },
         role,
-
-        // 🎮 V3 LOADOUT SYSTEM (pro Brawler individuell)
-        loadout: {
-            starPower: "None",
-            gadget: "None",
-            hypercharge: false
+        stats: {
+            dmg: Math.random()*10,
+            rng: Math.random()*10,
+            hp: Math.random()*10,
+            spd: Math.random()*10
         }
     };
 }
 
 //
 // =========================
-// 🧠 UI GENERATION (V3 STYLE)
+// 🧩 TEAM SELECTOR UI
 // =========================
 //
 
-const app = document.getElementById("app");
+const teamDiv = document.getElementById("team");
 
-BRAWLERS.forEach((b, index) => {
+let selects = [];
 
-    const div = document.createElement("div");
-    div.className = "card";
+for (let i = 0; i < 3; i++) {
 
-    div.innerHTML = `
-        <h3>${b.name}</h3>
+    let sel = document.createElement("select");
 
-        <p class="info">Rolle: ${b.role}</p>
+    BRAWLERS.forEach(b => {
+        let opt = document.createElement("option");
+        opt.value = b.name;
+        opt.innerText = b.name;
+        sel.appendChild(opt);
+    });
 
-        <select id="sp-${index}">
-            <option>None</option>
-            <option>Star Power A</option>
-            <option>Star Power B</option>
-        </select>
-
-        <select id="g-${index}">
-            <option>None</option>
-            <option>Gadget A</option>
-            <option>Gadget B</option>
-        </select>
-
-        <button onclick="analyze(${index})">Analyse</button>
-    `;
-
-    app.appendChild(div);
-});
+    selects.push(sel);
+    teamDiv.appendChild(sel);
+}
 
 //
 // =========================
-// 🧠 ENGINE V3
+// 🧠 TEAM ENGINE V3.5
 // =========================
 //
 
-function analyze(i) {
+function analyzeTeam() {
 
-    const b = BRAWLERS[i];
+    let team = selects.map(s =>
+        BRAWLERS.find(b => b.name === s.value)
+    );
 
-    const sp = document.getElementById(`sp-${i}`).value;
-    const gadget = document.getElementById(`g-${i}`).value;
+    let roles = {};
+    let score = 0;
 
-    let strengths = [];
-    let weaknesses = [];
+    for (let b of team) {
 
-    let total = 0;
+        roles[b.role] = (roles[b.role] || 0) + 1;
 
-    for (let e of BRAWLERS) {
-
-        if (e.name === b.name) continue;
-
-        let score =
-            (b.stats.rng - e.stats.rng) * 2 +
-            (b.stats.dmg - e.stats.dmg) * 1.2 +
-            (b.stats.hp - e.stats.hp) * 1.1 +
-            (b.stats.spd - e.stats.spd) * 0.5;
-
-        // ROLE MATCHUPS
-        if (b.role === "Tank" && e.role === "Sniper") score += 2;
-        if (b.role === "Sniper" && e.role === "Tank") score -= 2;
-        if (b.role === "Assassin" && e.role === "Shooter") score += 1;
-
-        // LOADOUT EFFECT
-        if (sp === "Star Power A") score += 0.5;
-        if (sp === "Star Power B") score += 1;
-
-        if (gadget === "Gadget A") score += 0.3;
-        if (gadget === "Gadget B") score += 0.7;
-
-        total += score;
-
-        if (score >= 2) strengths.push(`${e.name} (+${score.toFixed(1)})`);
-        if (score <= -2) weaknesses.push(`${e.name} (${score.toFixed(1)})`);
+        // base team power
+        score += (b.stats.dmg + b.stats.rng + b.stats.hp + b.stats.spd) / 4;
     }
+
+    // =========================
+    // 🤝 SYNERGY SYSTEM
+    // =========================
+
+    let synergy = 0;
+
+    // Tank + Support synergy
+    if (roles["Tank"] && roles["Control"]) synergy += 5;
+
+    // Assassin comp bonus
+    if (roles["Assassin"] >= 1) synergy += 3;
+
+    // Sniper protection needed check
+    if (roles["Sniper"] && !roles["Tank"]) synergy -= 3;
+
+    let total = score + synergy;
 
     let rating = "Normal";
 
-    if (total > 10) rating = "🔥 OP META";
-    else if (total > 5) rating = "🟢 Strong";
-    else if (total < -5) rating = "🔴 Weak";
+    if (total > 25) rating = "🔥 OP TEAM";
+    else if (total > 18) rating = "🟢 Strong Team";
+    else if (total < 12) rating = "🔴 Weak Team";
 
     document.getElementById("result").innerHTML = `
-        <h2>${b.name}</h2>
+        <h2>Team Analyse</h2>
 
-        <p><b>Rolle:</b> ${b.role}</p>
+        <p class="info"><b>Team Rating:</b> ${rating}</p>
 
-        <p class="info"><b>Meta:</b> ${rating}</p>
-
-        <p class="info"><b>Loadout:</b> ${sp} | ${gadget}</p>
-
-        <hr>
-
-        <p class="good"><b>Stark gegen:</b><br>${strengths.join("<br>") || "Keine Daten"}</p>
-
-        <p class="bad"><b>Schwach gegen:</b><br>${weaknesses.join("<br>") || "Keine Daten"}</p>
+        <p><b>Rollen:</b><br>
+        ${team.map(t => t.role).join(", ")}
+        </p>
 
         <hr>
 
-        <p class="small">V3 System Active</p>
+        <p class="good"><b>Team Power:</b> ${score.toFixed(1)}</p>
+
+        <p class="info"><b>Synergy Bonus:</b> ${synergy}</p>
+
+        <p class="bad"><b>Weakness Check:</b>
+        ${roles["Sniper"] && !roles["Tank"] ? "Keine Tank-Protection!" : "OK"}
+        </p>
+
+        <hr>
+
+        <p class="small">V3.5 Team System Active</p>
     `;
 }
 
