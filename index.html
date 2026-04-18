@@ -2,209 +2,343 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Brawl Helper Tool V5.1</title>
+<title>Brawl Helper Tool V8.1</title>
 
 <style>
-body {
-    font-family: Arial;
-    background: #0a0a0a;
-    color: white;
-    margin: 0;
+body{
+font-family:Arial;
+background:#0a0a0a;
+color:white;
+margin:0;
 }
 
-h1 { text-align:center; color:#4dff88; }
-
-.controls {
-    text-align:center;
-    padding: 10px;
+.nav{
+display:flex;
+justify-content:space-around;
+background:#111;
+padding:10px;
+position:sticky;
+top:0;
 }
 
-input, select {
-    padding: 10px;
-    border-radius: 8px;
-    border: none;
-    margin: 5px;
+.nav button{
+background:#1b1b1b;
+color:white;
+border:none;
+padding:10px;
+border-radius:8px;
+cursor:pointer;
 }
 
-.container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 10px;
-    padding: 20px;
+.page{display:none;padding:20px;}
+.active{display:block;}
+
+.card{
+background:#1b1b1b;
+padding:15px;
+border-radius:12px;
+margin:10px;
 }
 
-.card {
-    background: #1b1b1b;
-    padding: 15px;
-    border-radius: 12px;
-    cursor: pointer;
-}
-
-.card:hover {
-    transform: scale(1.03);
-}
-
-.panel {
-    padding: 20px;
-    margin: 20px;
-    background: #151515;
-    border-radius: 12px;
-}
-
-.good { color:#4dff88; }
-.info { color:#ffd24d; }
+.good{color:#4dff88;}
+.bad{color:#ff4d4d;}
+.info{color:#ffd24d;}
+.small{font-size:12px;color:#aaa;}
 </style>
 
 </head>
 
 <body>
 
-<h1>🔥 Brawl Helper Tool V5.1</h1>
-
-<div class="controls">
-    <input id="search" placeholder="🔍 Brawler suchen..." oninput="render()">
-
-    <select id="roleFilter" onchange="render()">
-        <option value="ALL">Alle Rollen</option>
-        <option value="Tank">Tank</option>
-        <option value="Shooter">Shooter</option>
-        <option value="Control">Control</option>
-        <option value="Assassin">Assassin</option>
-        <option value="Support">Support</option>
-        <option value="Thrower">Thrower</option>
-        <option value="Damage">Damage</option>
-    </select>
+<div class="nav">
+<button onclick="go('home')">🏠 Home</button>
+<button onclick="go('match')">⚔️ Match</button>
+<button onclick="go('clan')">🧑‍🤝‍🧑 Clan</button>
+<button onclick="go('replay')">📜 Replay</button>
+<button onclick="go('ladder')">🏆 Ladder</button>
 </div>
 
-<div class="panel" id="detail">Klicke auf einen Brawler</div>
+<h2 style="text-align:center;color:#4dff88;">🔥 Brawl Helper Tool V8.1</h2>
 
-<div class="container" id="list"></div>
+<!-- HOME -->
+<div id="home" class="page active">
+
+<div class="card">
+<h3>🌐 PERSISTENT SERVER CORE</h3>
+<p id="tick">Tick: 0</p>
+<p id="session">Session: NONE</p>
+</div>
+
+<div class="card">
+<h3>💾 LOCAL DB SYNC</h3>
+<p id="db">Not Synced</p>
+</div>
+
+</div>
+
+<!-- MATCH -->
+<div id="match" class="page">
+
+<div class="card">
+<h3>⚔️ RANGE MATCHMAKING SYSTEM</h3>
+
+<select id="a"></select>
+<select id="b"></select>
+
+<button onclick="startMatch()">Start Match</button>
+
+<div id="matchBox"></div>
+
+<div class="card small">
+<h3>👀 Spectators</h3>
+<div id="spectators"></div>
+</div>
+
+</div>
+
+</div>
+
+<!-- CLAN -->
+<div id="clan" class="page">
+
+<div class="card">
+<h3>🧑‍🤝‍🧑 Clan System</h3>
+
+<button onclick="joinClan('Red')">Red Clan</button>
+<button onclick="joinClan('Blue')">Blue Clan</button>
+
+<p id="clanInfo"></p>
+<div id="clanStats"></div>
+
+</div>
+
+</div>
+
+<!-- REPLAY -->
+<div id="replay" class="page">
+
+<div class="card">
+<h3>📜 Replay Viewer (Step Mode)</h3>
+
+<button onclick="playReplay()">Play Replay</button>
+
+<div id="replayBox"></div>
+
+</div>
+
+</div>
+
+<!-- LADDER -->
+<div id="ladder" class="page">
+
+<div class="card">
+<h3>🏆 Global Ladder</h3>
+<div id="board"></div>
+</div>
+
+</div>
 
 <script>
 
-//
-// =========================
-// 📦 DATA ENGINE (V5 CLEAN)
-// =========================
-//
+/* ===== SERVER CORE ===== */
+let SERVER={
+players:{},
+matches:{},
+replays:[],
+events:[],
+tick:0
+};
 
-const BRAWLERS = [
+/* LOCAL STORAGE DB */
+function saveDB(){
+localStorage.setItem("SERVER",JSON.stringify(SERVER));
+}
 
-{ name:"Shelly", hp:7400, role:"Shooter", gears:["Schaden","Tempo"] },
-{ name:"Nita", hp:8000, role:"Control", gears:["Pet-Power","Schaden"] },
-{ name:"Colt", hp:5600, role:"Shooter", gears:["Nachladen","Schaden"] },
-{ name:"Bull", hp:10000, role:"Tank", gears:["Schaden","Schild"] },
-{ name:"Brock", hp:4800, role:"Shooter", gears:["Schaden"] },
-{ name:"El Primo", hp:12000, role:"Tank", gears:["Tempo"] },
-{ name:"Barley", hp:4800, role:"Control", gears:["Schaden"] },
-{ name:"Poco", hp:7400, role:"Support", gears:["Heilung"] },
-{ name:"Rosa", hp:10000, role:"Tank", gears:["Schaden"] },
-{ name:"Jessie", hp:6000, role:"Control", gears:["Pet-Power"] },
-{ name:"Dynamike", hp:5600, role:"Thrower", gears:["Schaden"] },
-{ name:"Tick", hp:4400, role:"Thrower", gears:["Schaden"] },
-{ name:"8-Bit", hp:10000, role:"Damage", gears:["Schaden"] },
-{ name:"Rico", hp:5600, role:"Shooter", gears:["Schaden"] },
-{ name:"Darryl", hp:10600, role:"Tank", gears:["Tempo"] },
-{ name:"Penny", hp:6400, role:"Control", gears:["Pet-Power"] },
-{ name:"Carl", hp:8000, role:"Tank", gears:["Schaden"] },
-{ name:"Jacky", hp:10000, role:"Tank", gears:["Tempo"] },
-{ name:"Frank", hp:14000, role:"Tank", gears:["Schild"] }
+function loadDB(){
+let d=localStorage.getItem("SERVER");
+if(d) SERVER=JSON.parse(d);
+}
 
+/* PLAYERS */
+let PLAYERS=[
+{name:"Shelly",elo:1000,wins:0,losses:0,clan:null},
+{name:"Colt",elo:1000,wins:0,losses:0,clan:null},
+{name:"Bull",elo:1000,wins:0,losses:0,clan:null},
+{name:"Poco",elo:1000,wins:0,losses:0,clan:null}
 ];
 
-//
-// =========================
-// 🧠 META ENGINE
-// =========================
-//
+/* MATCH */
+let match=null;
 
-function meta(b){
-    return (b.hp/1000) +
-           (b.role==="Tank"?2:0) +
-           (b.gears.includes("Schaden")?1:0);
+/* NAV */
+function go(id){
+document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+document.getElementById(id).classList.add("active");
 }
 
-function tier(m){
-    if(m>=12) return "S";
-    if(m>=10) return "A";
-    if(m>=8) return "B";
-    return "C";
-}
-
-//
-// =========================
-// 🔍 FILTER SYSTEM
-// =========================
-//
-
-function getFiltered(){
-
-    let search = document.getElementById("search").value.toLowerCase();
-    let role = document.getElementById("roleFilter").value;
-
-    return BRAWLERS.filter(b=>{
-
-        let matchName = b.name.toLowerCase().includes(search);
-        let matchRole = role==="ALL" || b.role===role;
-
-        return matchName && matchRole;
-    });
-
-}
-
-//
-// =========================
-// 🖥️ RENDER
-// =========================
-//
-
-function render(){
-
-const list=document.getElementById("list");
-list.innerHTML="";
-
-getFiltered()
-.sort((a,b)=>meta(b)-meta(a))
-.forEach(b=>{
-
-let div=document.createElement("div");
-div.className="card";
-
-div.innerHTML=`
-<h3>${b.name}</h3>
-<p class="info">${b.role}</p>
-<p>HP: ${b.hp}</p>
-<p>Tier: ${tier(meta(b))}</p>
-`;
-
-div.onclick=()=>show(b);
-
-list.appendChild(div);
-
+/* INIT */
+PLAYERS.forEach(p=>{
+SERVER.players[p.name]=p;
 });
 
+/* SERVER TICK */
+setInterval(()=>{
+
+SERVER.tick++;
+
+tick.innerHTML="Tick: "+SERVER.tick;
+
+session.innerHTML="Session Active";
+
+db.innerHTML="Synced ✔";
+
+saveDB();
+
+},500);
+
+/* MATCH */
+function startMatch(){
+
+let A=a.value;
+let B=b.value;
+
+match={
+A:A,
+B:B,
+hpA:100,
+hpB:100,
+tick:0,
+history:[]
+};
+
+run();
+
 }
 
-//
-// =========================
-// 📊 DETAIL
-// =========================
-//
+/* ENGINE */
+function run(){
 
-function show(b){
+let interval=setInterval(()=>{
 
-document.getElementById("detail").innerHTML=`
-<h2>${b.name}</h2>
-<p class="info">${b.role}</p>
-<hr>
-<p>HP: ${b.hp}</p>
-<p class="good">Meta: ${meta(b)}</p>
-<p>Tier: ${tier(meta(b))}</p>
+match.tick++;
+
+match.hpA-=Math.random()*20;
+match.hpB-=Math.random()*20;
+
+match.history.push({
+t:match.tick,
+a:match.hpA,
+b:match.hpB
+});
+
+/* UI */
+matchBox.innerHTML=`
+<div class="card">
+⚔️ MATCH<br>
+${match.A}: ${Math.floor(match.hpA)}<br>
+${match.B}: ${Math.floor(match.hpB)}<br>
+Tick: ${match.tick}
+</div>
 `;
 
+spectators.innerHTML=matchBox.innerHTML;
+
+/* END */
+if(match.hpA<=0||match.hpB<=0){
+
+clearInterval(interval);
+
+let winner=match.hpA>match.hpB?match.A:match.B;
+
+SERVER.replays.push(match);
+
+renderReplay();
+
+updateLadder();
+
 }
 
-render();
+},400);
+
+}
+
+/* CLAN */
+function joinClan(c){
+
+SERVER.players[PLAYERS[0].name].clan=c;
+
+clanInfo.innerHTML="Clan: "+c;
+
+}
+
+/* REPLAY */
+function playReplay(){
+
+if(!SERVER.replays.length)return;
+
+let r=SERVER.replays[0];
+
+let i=0;
+
+let interval=setInterval(()=>{
+
+if(i>=r.history.length) clearInterval(interval);
+
+let s=r.history[i];
+
+replayBox.innerHTML=`
+<div class="card">
+Replay Tick ${i}<br>
+A: ${Math.floor(s.a)}<br>
+B: ${Math.floor(s.b)}
+</div>
+`;
+
+i++;
+
+},300);
+
+}
+
+/* LADDER */
+function updateLadder(){
+
+let list=Object.values(SERVER.players);
+
+list.sort((a,b)=>b.elo-a.elo);
+
+board.innerHTML=list.map(p=>`
+<div class="card">
+${p.name} | Elo: ${p.elo}
+</div>
+`).join("");
+
+}
+
+/* INIT SELECT */
+function init(){
+
+loadDB();
+
+a.innerHTML="";
+b.innerHTML="";
+
+PLAYERS.forEach(p=>{
+let o1=document.createElement("option");
+o1.value=p.name;
+o1.text=p.name;
+
+let o2=o1.cloneNode(true);
+
+a.appendChild(o1);
+b.appendChild(o2);
+});
+
+updateLadder();
+
+}
+
+init();
 
 </script>
 
