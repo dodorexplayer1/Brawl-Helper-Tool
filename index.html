@@ -2,12 +2,12 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Brawl Helper Counter System</title>
+<title>Brawl Helper Tool V2</title>
 
 <style>
 body {
     font-family: Arial;
-    background: #111;
+    background: #0f0f0f;
     color: white;
     text-align: center;
     margin: 0;
@@ -15,18 +15,14 @@ body {
 }
 
 h1 {
-    margin-bottom: 10px;
-}
-
-.container {
-    margin-top: 20px;
+    margin-top: 10px;
 }
 
 select, button {
     padding: 10px;
     margin: 10px;
     font-size: 16px;
-    border-radius: 6px;
+    border-radius: 8px;
     border: none;
 }
 
@@ -38,13 +34,14 @@ button {
 }
 
 .card {
-    background: #222;
-    padding: 15px;
+    background: #1e1e1e;
+    padding: 20px;
     margin-top: 20px;
-    border-radius: 10px;
+    border-radius: 12px;
     display: inline-block;
     min-width: 320px;
     max-width: 90%;
+    text-align: left;
 }
 
 .good {
@@ -54,31 +51,30 @@ button {
 .bad {
     color: #ff4d4d;
 }
+
+.score {
+    color: #ffd24d;
+}
 </style>
 
 </head>
 
 <body>
 
-<h1>🔥 Brawl Counter System</h1>
+<h1>🔥 Brawl Helper Tool V2</h1>
 
-<div class="container">
+<p>Wähle deinen Brawler und analysiere Matchups</p>
 
-    <h3>Wähle deinen Brawler</h3>
+<select id="brawlerSelect"></select>
+<br>
+<button onclick="analyze()">Analyse starten</button>
 
-    <select id="brawlerSelect"></select>
-
-    <br>
-
-    <button onclick="analyze()">Analyse starten</button>
-
-    <div id="result" class="card">Wähle einen Brawler und starte Analyse</div>
-
-</div>
+<div id="result" class="card">Wähle einen Brawler</div>
 
 <script>
+
 // =========================
-// 🎮 BRAWLER DATEN (EINFACH ERWEITERBAR)
+// 🎮 BRAWLER DATENBANK
 // =========================
 
 const brawlers = [
@@ -86,27 +82,30 @@ const brawlers = [
     { name: "Colt", damage: 9, range: 9, hp: 4, speed: 7, role: "Shooter" },
     { name: "Bull", damage: 9, range: 2, hp: 10, speed: 6, role: "Tank" },
     { name: "Nita", damage: 6, range: 5, hp: 7, speed: 6, role: "Control" },
-    { name: "Piper", damage: 10, range: 10, hp: 3, speed: 6, role: "Sniper" }
+    { name: "Piper", damage: 10, range: 10, hp: 3, speed: 6, role: "Sniper" },
+    { name: "Leon", damage: 8, range: 5, hp: 5, speed: 10, role: "Assassin" },
+    { name: "Spike", damage: 9, range: 7, hp: 4, speed: 7, role: "Control" }
 ];
 
 // =========================
-// 🔄 DROPDOWN FÜLLEN
+// 🔄 DROPDOWN
 // =========================
 
 const select = document.getElementById("brawlerSelect");
 
 brawlers.forEach(b => {
-    const option = document.createElement("option");
-    option.value = b.name;
-    option.innerText = b.name;
-    select.appendChild(option);
+    let opt = document.createElement("option");
+    opt.value = b.name;
+    opt.innerText = b.name;
+    select.appendChild(opt);
 });
 
 // =========================
-// 🧠 COUNTER SYSTEM LOGIK
+// 🧠 COUNTER SYSTEM V2
 // =========================
 
 function analyze() {
+
     const name = select.value;
     const b = brawlers.find(x => x.name === name);
 
@@ -114,30 +113,43 @@ function analyze() {
     let weaknesses = [];
 
     brawlers.forEach(enemy => {
+
         if (enemy.name === b.name) return;
 
         let score = 0;
 
-        // Range Vorteil
+        // 📏 RANGE
         if (b.range > enemy.range) score += 2;
         else score -= 2;
 
-        // Damage Vergleich
+        // 💥 DAMAGE
         if (b.damage > enemy.damage) score += 1;
         else score -= 1;
 
-        // HP Vergleich
+        // ❤️ HP
         if (b.hp > enemy.hp) score += 1;
         else score -= 1;
 
-        // Speed leicht berücksichtigen
+        // ⚡ SPEED
         if (b.speed > enemy.speed) score += 0.5;
         else score -= 0.5;
 
+        // 🧠 ROLE MATCHUPS
+        if (b.role === "Tank" && enemy.role === "Sniper") score += 2;
+        if (b.role === "Sniper" && enemy.role === "Tank") score -= 2;
+
+        if (b.role === "Assassin" && enemy.role === "Shooter") score += 1;
+        if (b.role === "Shooter" && enemy.role === "Assassin") score -= 1;
+
+        if (b.role === "Control" && enemy.role === "Tank") score += 1;
+
+        // 📊 RESULT
         if (score >= 2) {
-            strengths.push(enemy.name);
-        } else if (score <= -2) {
-            weaknesses.push(enemy.name);
+            strengths.push(`${enemy.name} <span class="score">(+${score.toFixed(1)})</span>`);
+        }
+
+        if (score <= -2) {
+            weaknesses.push(`${enemy.name} <span class="score">(${score.toFixed(1)})</span>`);
         }
     });
 
@@ -145,10 +157,12 @@ function analyze() {
         <h2>${b.name}</h2>
         <p><b>Rolle:</b> ${b.role}</p>
 
-        <p class="good"><b>Stark gegen:</b> ${strengths.join(", ") || "Keine Daten"}</p>
-        <p class="bad"><b>Schwach gegen:</b> ${weaknesses.join(", ") || "Keine Daten"}</p>
+        <p class="good"><b>Stark gegen:</b><br>${strengths.join("<br>") || "Keine Daten"}</p>
+
+        <p class="bad"><b>Schwach gegen:</b><br>${weaknesses.join("<br>") || "Keine Daten"}</p>
     `;
 }
+
 </script>
 
 </body>
