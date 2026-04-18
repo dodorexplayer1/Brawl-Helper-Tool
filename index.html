@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Brawl Helper Tool V1.7</title>
+<title>Brawl Helper Tool V3</title>
 
 <style>
 body {
@@ -13,22 +13,13 @@ body {
     padding: 20px;
 }
 
-h1 {
-    color: #4dff88;
-    margin-bottom: 5px;
-}
-
-.subtitle {
-    opacity: 0.7;
-    font-size: 13px;
-}
+h1 { color: #4dff88; }
 
 select, button {
-    padding: 12px;
-    margin: 10px;
-    border-radius: 10px;
+    padding: 10px;
+    margin: 6px;
+    border-radius: 8px;
     border: none;
-    font-size: 15px;
 }
 
 button {
@@ -39,31 +30,14 @@ button {
 }
 
 .card {
-    background: #1a1a1a;
-    padding: 25px;
-    border-radius: 16px;
+    background: #1b1b1b;
+    padding: 20px;
+    border-radius: 14px;
     margin-top: 20px;
     display: inline-block;
-    min-width: 340px;
+    min-width: 360px;
     max-width: 95%;
     text-align: left;
-    box-shadow: 0 0 15px rgba(77,255,136,0.1);
-}
-
-.tag {
-    display: inline-block;
-    padding: 5px 10px;
-    border-radius: 8px;
-    font-size: 12px;
-    margin-left: 10px;
-}
-
-.op { background: #ff4d4d; }
-.strong { background: #4dff88; color: black; }
-.normal { background: #ffd24d; color: black; }
-
-.section {
-    margin-top: 10px;
 }
 
 .good { color: #4dff88; }
@@ -80,22 +54,23 @@ button {
 
 <body>
 
-<h1>🔥 Brawl Helper Tool V1.7</h1>
-<p class="subtitle">UI Upgrade + Better Experience</p>
+<h1>🔥 Brawl Helper Tool V3</h1>
+<p class="small">Full Loadout + Data Architecture</p>
 
-<select id="brawlerSelect"></select>
-<br>
-<button onclick="analyze()">Analyse starten</button>
+<div id="app"></div>
 
 <div id="result" class="card">Wähle einen Brawler</div>
 
 <script>
 
+//
 // =========================
-// 🎮 BRAWLER DATA
+// 📦 BRAWLER DATABASE V3
 // =========================
+// 👉 101+ ready Struktur
+//
 
-const brawlers = [
+const BRAWLERS = [
     create("Shelly", 8, 4, 7, 6, "Shotgun"),
     create("Colt", 9, 9, 4, 7, "Shooter"),
     create("Bull", 9, 2, 10, 6, "Tank"),
@@ -106,94 +81,126 @@ const brawlers = [
 ];
 
 function create(name, dmg, rng, hp, spd, role) {
-    return { name, dmg, rng, hp, spd, role };
+    return {
+        name,
+        stats: { dmg, rng, hp, spd },
+        role,
+
+        // 🎮 V3 LOADOUT SYSTEM (pro Brawler individuell)
+        loadout: {
+            starPower: "None",
+            gadget: "None",
+            hypercharge: false
+        }
+    };
 }
 
+//
 // =========================
-// 🔄 DROPDOWN
+// 🧠 UI GENERATION (V3 STYLE)
 // =========================
+//
 
-const select = document.getElementById("brawlerSelect");
+const app = document.getElementById("app");
 
-brawlers.forEach(b => {
-    let opt = document.createElement("option");
-    opt.value = b.name;
-    opt.innerText = b.name;
-    select.appendChild(opt);
+BRAWLERS.forEach((b, index) => {
+
+    const div = document.createElement("div");
+    div.className = "card";
+
+    div.innerHTML = `
+        <h3>${b.name}</h3>
+
+        <p class="info">Rolle: ${b.role}</p>
+
+        <select id="sp-${index}">
+            <option>None</option>
+            <option>Star Power A</option>
+            <option>Star Power B</option>
+        </select>
+
+        <select id="g-${index}">
+            <option>None</option>
+            <option>Gadget A</option>
+            <option>Gadget B</option>
+        </select>
+
+        <button onclick="analyze(${index})">Analyse</button>
+    `;
+
+    app.appendChild(div);
 });
 
+//
 // =========================
-// 🧠 ANALYSE ENGINE
+// 🧠 ENGINE V3
 // =========================
+//
 
-function analyze() {
+function analyze(i) {
 
-    const b = brawlers.find(x => x.name === select.value);
+    const b = BRAWLERS[i];
+
+    const sp = document.getElementById(`sp-${i}`).value;
+    const gadget = document.getElementById(`g-${i}`).value;
 
     let strengths = [];
     let weaknesses = [];
-    let scoreTotal = 0;
 
-    for (let e of brawlers) {
+    let total = 0;
+
+    for (let e of BRAWLERS) {
 
         if (e.name === b.name) continue;
 
         let score =
-            (b.rng - e.rng) * 2 +
-            (b.dmg - e.dmg) * 1.2 +
-            (b.hp - e.hp) * 1.1 +
-            (b.spd - e.spd) * 0.5;
+            (b.stats.rng - e.stats.rng) * 2 +
+            (b.stats.dmg - e.stats.dmg) * 1.2 +
+            (b.stats.hp - e.stats.hp) * 1.1 +
+            (b.stats.spd - e.stats.spd) * 0.5;
 
+        // ROLE MATCHUPS
         if (b.role === "Tank" && e.role === "Sniper") score += 2;
         if (b.role === "Sniper" && e.role === "Tank") score -= 2;
         if (b.role === "Assassin" && e.role === "Shooter") score += 1;
 
-        scoreTotal += score;
+        // LOADOUT EFFECT
+        if (sp === "Star Power A") score += 0.5;
+        if (sp === "Star Power B") score += 1;
+
+        if (gadget === "Gadget A") score += 0.3;
+        if (gadget === "Gadget B") score += 0.7;
+
+        total += score;
 
         if (score >= 2) strengths.push(`${e.name} (+${score.toFixed(1)})`);
         if (score <= -2) weaknesses.push(`${e.name} (${score.toFixed(1)})`);
     }
 
-    let tag = "normal";
-    let label = "Normal";
+    let rating = "Normal";
 
-    if (scoreTotal > 10) {
-        tag = "op";
-        label = "🔥 OP META";
-    }
-    else if (scoreTotal > 5) {
-        tag = "strong";
-        label = "🟢 Strong";
-    }
-    else if (scoreTotal < -5) {
-        tag = "normal";
-        label = "🔴 Weak";
-    }
+    if (total > 10) rating = "🔥 OP META";
+    else if (total > 5) rating = "🟢 Strong";
+    else if (total < -5) rating = "🔴 Weak";
 
     document.getElementById("result").innerHTML = `
-        <h2>${b.name}
-            <span class="tag ${tag}">${label}</span>
-        </h2>
+        <h2>${b.name}</h2>
 
-        <div class="section">
-            <b>Rolle:</b> ${b.role}
-        </div>
+        <p><b>Rolle:</b> ${b.role}</p>
 
-        <div class="section good">
-            <b>Stark gegen:</b><br>
-            ${strengths.join("<br>") || "Keine Daten"}
-        </div>
+        <p class="info"><b>Meta:</b> ${rating}</p>
 
-        <div class="section bad">
-            <b>Schwach gegen:</b><br>
-            ${weaknesses.join("<br>") || "Keine Daten"}
-        </div>
+        <p class="info"><b>Loadout:</b> ${sp} | ${gadget}</p>
 
         <hr>
 
-        <div class="section info">
-            <b>Score:</b> ${scoreTotal.toFixed(1)}
-        </div>
+        <p class="good"><b>Stark gegen:</b><br>${strengths.join("<br>") || "Keine Daten"}</p>
+
+        <p class="bad"><b>Schwach gegen:</b><br>${weaknesses.join("<br>") || "Keine Daten"}</p>
+
+        <hr>
+
+        <p class="small">V3 System Active</p>
     `;
 }
 
