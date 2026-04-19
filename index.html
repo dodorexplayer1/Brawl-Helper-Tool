@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Ranked System V13</title>
+<title>Ranked System V14</title>
 
 <style>
 body{
@@ -40,7 +40,7 @@ cursor:pointer;
 margin:3px;
 }
 
-/* MAIN */
+/* LAYOUT */
 .container{
 display:flex;
 height:90vh;
@@ -161,6 +161,19 @@ width:320px;
 z-index:20;
 }
 
+/* CLOSE BUTTON */
+.closeBtn{
+position:absolute;
+top:10px;
+right:10px;
+background:#333;
+border:none;
+color:white;
+border-radius:6px;
+padding:4px 8px;
+cursor:pointer;
+}
+
 input{
 width:100%;
 padding:8px;
@@ -182,12 +195,12 @@ color:#aaa;
 <div class="nav">
 
 <div class="title">
-🏆 Ranked V13 System
+🏆 Ranked V14 System
 <span id="adminState" class="adminState">❌ Offline</span>
 </div>
 
 <div>
-<button onclick="openSettings()">⚙️</button>
+<button onclick="togglePanel()">⚙️</button>
 <button id="logoutBtn" onclick="logout()" style="display:none;">Logout</button>
 </div>
 
@@ -229,6 +242,8 @@ color:#aaa;
 
 <!-- PANEL -->
 <div id="panel" class="panel">
+
+<button class="closeBtn" onclick="closePanel()">✖</button>
 
 <h3>🔐 Admin Login</h3>
 <input id="pass" placeholder="Passwort">
@@ -275,14 +290,24 @@ let selectedSlot=null;
 let enemy=[null,null,null];
 let ally=[null,null,null];
 
-/* SETTINGS */
-function openSettings(){
-panel.style.display="block";
+/* PANEL OPEN/CLOSE FIX */
+function togglePanel(){
+panel.style.display = panel.style.display==="block" ? "none":"block";
 }
 
-/* LOGIN FIX */
-function login(){
+function closePanel(){
+panel.style.display="none";
+}
 
+/* CLOSE OUTSIDE CLICK */
+window.onclick=function(e){
+if(e.target===panel){
+panel.style.display="none";
+}
+};
+
+/* LOGIN */
+function login(){
 if(pass.value===PASSWORD){
 isAdmin=true;
 
@@ -292,13 +317,11 @@ adminTools.style.display="block";
 logoutBtn.style.display="inline-block";
 
 adminState.innerText="✅ Admin Online";
-
 }
 }
 
-/* LOGOUT FIX */
+/* LOGOUT */
 function logout(){
-
 isAdmin=false;
 
 adminArea.style.display="none";
@@ -307,7 +330,6 @@ adminTools.style.display="none";
 logoutBtn.style.display="none";
 
 adminState.innerText="❌ Offline";
-
 }
 
 /* ADD */
