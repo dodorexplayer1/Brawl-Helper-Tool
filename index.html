@@ -12,18 +12,18 @@ background:#0a0a0a;
 color:white;
 }
 
-/* NAV */
 .nav{
 background:#111;
 padding:10px;
-text-align:center;
+display:flex;
+justify-content:space-between;
 }
 
-.nav button{
+button{
 background:#1b1b1b;
 color:white;
 border:none;
-padding:10px;
+padding:8px 12px;
 border-radius:8px;
 cursor:pointer;
 }
@@ -34,12 +34,16 @@ display:flex;
 height:90vh;
 }
 
-/* LEFT PANEL */
 .left{
 width:25%;
 background:#111;
 padding:10px;
 overflow-y:auto;
+}
+
+.center{
+width:75%;
+padding:10px;
 }
 
 .search{
@@ -50,10 +54,22 @@ border-radius:6px;
 border:none;
 }
 
-/* CENTER */
-.center{
-width:75%;
-padding:10px;
+/* BRAWLER */
+.brawler{
+background:#1b1b1b;
+padding:8px;
+margin:5px 0;
+border-radius:8px;
+cursor:pointer;
+display:flex;
+align-items:center;
+gap:10px;
+}
+
+.brawler img{
+width:40px;
+height:40px;
+border-radius:6px;
 }
 
 /* TEAMS */
@@ -72,39 +88,44 @@ display:flex;
 align-items:center;
 justify-content:center;
 border-radius:12px;
-cursor:pointer;
+flex-direction:column;
+}
+
+.slot img{
+width:60px;
+height:60px;
 }
 
 .enemy{border:2px solid red;}
 .ally{border:2px solid green;}
 
-/* BRAWLER LIST */
-.brawler{
-background:#1b1b1b;
-padding:8px;
-margin:5px 0;
-border-radius:8px;
-cursor:pointer;
+/* PANEL */
+.panel{
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+background:#111;
+padding:20px;
+border-radius:12px;
+display:none;
 }
-
 </style>
 </head>
 
 <body>
 
 <div class="nav">
-<button onclick="goRanked()">🏆 Ranked</button>
+<div>🏆 Ranked</div>
+<button onclick="openSettings()">⚙️</button>
 </div>
 
-<div id="ranked" class="container">
+<div class="container">
 
 <!-- LEFT -->
 <div class="left">
-
-<input id="search" class="search" placeholder="Brawler suchen..." oninput="renderList()">
-
+<input id="search" class="search" placeholder="Suchen..." oninput="renderList()">
 <div id="brawlerList"></div>
-
 </div>
 
 <!-- CENTER -->
@@ -124,96 +145,136 @@ cursor:pointer;
 <div class="slot ally" onclick="selectSlot('ally',2)">?</div>
 </div>
 
-<h3>⭐ Empfohlene Brawler (hier baust DU dein System)</h3>
+<h3>⭐ Empfohlen (baust du selbst)</h3>
 <div id="recommend"></div>
 
 </div>
 
 </div>
 
+<!-- SETTINGS PANEL -->
+<div id="panel" class="panel">
+
+<h3>🔐 Admin Login</h3>
+<input id="pass" placeholder="Passwort"><br><br>
+<button onclick="login()">Login</button>
+
+<div id="adminArea" style="display:none;">
+<h3>⬆️ Brawler hinzufügen</h3>
+<input id="name" placeholder="Name"><br><br>
+<input type="file" id="img"><br><br>
+<button onclick="addBrawler()">Hinzufügen</button>
+</div>
+
+</div>
+
 <script>
 
-/* =========================
-   BRAWLER LIST (1–10)
-========================= */
-const BRAWLERS=[
-"Shelly","Nita","Colt","Bull","Brock",
-"El Primo","Barley","Poco","Rosa","Jessie"
-];
+/* ADMIN */
+let isAdmin=false;
+const PASSWORD="1234"; // 👉 kannst du ändern
 
-/* =========================
-   STATE
-========================= */
+/* DATA */
+let BRAWLERS=JSON.parse(localStorage.getItem("brawlers")||"[]");
+
+/* STATE */
 let selectedSlot=null;
 let enemy=[null,null,null];
 let ally=[null,null,null];
 
-/* =========================
-   NAV
-========================= */
-function goRanked(){
-document.getElementById("ranked").style.display="flex";
+/* SETTINGS */
+function openSettings(){
+panel.style.display="block";
 }
 
-/* =========================
-   SELECT SLOT
-========================= */
+function login(){
+if(pass.value===PASSWORD){
+isAdmin=true;
+adminArea.style.display="block";
+}
+}
+
+/* ADD BRAWLER */
+function addBrawler(){
+
+if(!isAdmin) return;
+
+let file=img.files[0];
+let reader=new FileReader();
+
+reader.onload=function(){
+
+BRAWLERS.push({
+name:name.value,
+img:reader.result
+});
+
+localStorage.setItem("brawlers",JSON.stringify(BRAWLERS));
+
+renderList();
+
+};
+
+reader.readAsDataURL(file);
+
+}
+
+/* SELECT SLOT */
 function selectSlot(team,index){
 selectedSlot={team,index};
 }
 
-/* =========================
-   PICK BRAWLER
-========================= */
-function pickBrawler(name){
+/* PICK */
+function pickBrawler(b){
 
 if(!selectedSlot)return;
 
 if(selectedSlot.team==="enemy"){
-enemy[selectedSlot.index]=name;
+enemy[selectedSlot.index]=b;
 }else{
-ally[selectedSlot.index]=name;
+ally[selectedSlot.index]=b;
 }
 
 updateUI();
+
 }
 
-/* =========================
-   UPDATE UI
-========================= */
+/* UPDATE UI */
 function updateUI(){
 
-let enemySlots=document.querySelectorAll("#enemyTeam .slot");
-let allySlots=document.querySelectorAll("#allyTeam .slot");
+let e=document.querySelectorAll("#enemyTeam .slot");
+let a=document.querySelectorAll("#allyTeam .slot");
 
-enemySlots.forEach((s,i)=>{
-s.innerHTML=enemy[i]||"?";
+e.forEach((s,i)=>{
+if(enemy[i]){
+s.innerHTML=`<img src="${enemy[i].img}"><br>${enemy[i].name}`;
+}else s.innerHTML="?";
 });
 
-allySlots.forEach((s,i)=>{
-s.innerHTML=ally[i]||"?";
+a.forEach((s,i)=>{
+if(ally[i]){
+s.innerHTML=`<img src="${ally[i].img}"><br>${ally[i].name}`;
+}else s.innerHTML="?";
 });
 
 }
 
-/* =========================
-   RENDER LIST
-========================= */
+/* RENDER */
 function renderList(){
 
 let val=search.value.toLowerCase();
 
 brawlerList.innerHTML=BRAWLERS
-.filter(b=>b.toLowerCase().includes(val))
+.filter(b=>b.name.toLowerCase().includes(val))
 .map(b=>`
-<div class="brawler" onclick="pickBrawler('${b}')">
-${b}
+<div class="brawler" onclick='pickBrawler(${JSON.stringify(b)})'>
+<img src="${b.img}">
+${b.name}
 </div>
 `).join("");
 
 }
 
-/* INIT */
 renderList();
 
 </script>
