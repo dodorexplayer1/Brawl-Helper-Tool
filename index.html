@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Ranked Brawler System V10</title>
+<title>Ranked System V11</title>
 
 <style>
 body{
@@ -22,6 +22,12 @@ align-items:center;
 
 .title{font-size:18px;}
 
+.adminStatus{
+font-size:12px;
+color:#aaa;
+margin-left:10px;
+}
+
 button{
 background:#1b1b1b;
 color:white;
@@ -29,6 +35,7 @@ border:none;
 padding:8px 12px;
 border-radius:8px;
 cursor:pointer;
+margin-left:5px;
 }
 
 .container{
@@ -152,8 +159,17 @@ color:#aaa;
 <body>
 
 <div class="nav">
-<div class="title">🏆 Ranked V10 System</div>
+
+<div class="title">
+🏆 Ranked V11 System
+<span id="adminState" class="adminStatus">❌ Nicht eingeloggt</span>
+</div>
+
+<div>
 <button onclick="openSettings()">⚙️</button>
+<button onclick="logout()">Logout</button>
+</div>
+
 </div>
 
 <div class="container">
@@ -184,14 +200,11 @@ color:#aaa;
 <div class="slot ally" onclick="selectSlot('ally',2)">?</div>
 </div>
 
-<h3>⭐ Empfohlen (frei System)</h3>
-<div id="recommend"></div>
-
 </div>
 
 </div>
 
-<!-- SETTINGS -->
+<!-- PANEL -->
 <div id="panel" class="panel">
 
 <h3>🔐 Admin Login</h3>
@@ -200,14 +213,14 @@ color:#aaa;
 
 <div id="adminArea" style="display:none;">
 
-<h3>⬆️ Brawler Upload</h3>
+<h3>⬆️ Upload</h3>
 
 <input id="name" placeholder="Brawler Name">
 <input type="file" id="img" accept="image/*">
 
 <button onclick="addBrawler()">Hinzufügen</button>
 
-<p class="info">Nur Admin kann Inhalte ändern</p>
+<p class="info">Nur Admin kann editieren/löschen</p>
 
 </div>
 
@@ -223,6 +236,7 @@ const imgInput=document.getElementById("img");
 const brawlerList=document.getElementById("brawlerList");
 const search=document.getElementById("search");
 const adminArea=document.getElementById("adminArea");
+const adminState=document.getElementById("adminState");
 
 /* ADMIN */
 let isAdmin=false;
@@ -236,7 +250,7 @@ let selectedSlot=null;
 let enemy=[null,null,null];
 let ally=[null,null,null];
 
-/* SETTINGS */
+/* PANEL */
 function openSettings(){
 panel.style.display="block";
 }
@@ -245,30 +259,29 @@ function login(){
 if(pass.value===PASSWORD){
 isAdmin=true;
 adminArea.style.display="block";
-alert("Login OK ✅");
+adminState.innerText="✅ Admin aktiv";
+alert("Login OK");
 }else{
-alert("Falsches Passwort ❌");
+alert("Falsch");
 }
+}
+
+function logout(){
+isAdmin=false;
+adminState.innerText="❌ Nicht eingeloggt";
+adminArea.style.display="none";
 }
 
 /* ADD */
 function addBrawler(){
 
-if(!isAdmin){
-alert("Kein Zugriff ❌");
-return;
-}
+if(!isAdmin)return;
 
 let nameVal=nameInput.value.trim();
 let file=imgInput.files[0];
 
-if(nameVal===""){
-alert("Name fehlt ❌");
-return;
-}
-
-if(!file){
-alert("Bild fehlt ❌");
+if(!nameVal||!file){
+alert("Name oder Bild fehlt");
 return;
 }
 
@@ -287,8 +300,6 @@ nameInput.value="";
 imgInput.value="";
 
 renderList();
-
-alert("Brawler hinzugefügt ✅");
 };
 
 reader.readAsDataURL(file);
@@ -310,14 +321,13 @@ renderList();
 function editBrawler(i){
 if(!isAdmin)return;
 
-let newName=prompt("Neuer Name:",BRAWLERS[i].name);
+let newName=prompt("Name:",BRAWLERS[i].name);
 if(newName)BRAWLERS[i].name=newName;
 
 let change=confirm("Bild ändern?");
 if(change){
 let input=document.createElement("input");
 input.type="file";
-input.accept="image/*";
 
 input.onchange=function(){
 let file=input.files[0];
@@ -340,8 +350,8 @@ renderList();
 }
 
 /* SLOT */
-function selectSlot(team,index){
-selectedSlot={team,index};
+function selectSlot(team,i){
+selectedSlot={team,i};
 }
 
 /* PICK */
@@ -352,9 +362,9 @@ if(!selectedSlot)return;
 let b=BRAWLERS[i];
 
 if(selectedSlot.team==="enemy"){
-enemy[selectedSlot.index]=b;
+enemy[selectedSlot.i]=b;
 }else{
-ally[selectedSlot.index]=b;
+ally[selectedSlot.i]=b;
 }
 
 updateUI();
@@ -365,13 +375,11 @@ updateUI();
 function updateUI(){
 
 document.querySelectorAll("#enemyTeam .slot").forEach((s,i)=>{
-s.innerHTML=enemy[i]
-?`<img src="${enemy[i].img}"><br>${enemy[i].name}`:"?";
+s.innerHTML=enemy[i]?`<img src="${enemy[i].img}"><br>${enemy[i].name}`:"?";
 });
 
 document.querySelectorAll("#allyTeam .slot").forEach((s,i)=>{
-s.innerHTML=ally[i]
-?`<img src="${ally[i].img}"><br>${ally[i].name}`:"?";
+s.innerHTML=ally[i]?`<img src="${ally[i].img}"><br>${ally[i].name}`:"?";
 });
 
 }
@@ -387,7 +395,7 @@ return b.name.toLowerCase().includes(val);
 });
 
 brawlerList.innerHTML=list.map((b,i)=>`
-<div class="brawler">
+<div class="brawler" onclick="pickBrawler(${i})">
 <img src="${b.img}">
 ${b.name}
 
