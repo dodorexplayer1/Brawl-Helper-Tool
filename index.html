@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Ranked System V12</title>
+<title>Ranked System V13</title>
 
 <style>
 body{
@@ -46,14 +46,12 @@ display:flex;
 height:90vh;
 }
 
-/* LEFT FIXED STRUCTURE */
+/* LEFT */
 .left{
 width:25%;
 background:#111;
 padding:10px;
 overflow-y:auto;
-
-/* 🔥 FIX: mehr Luft oben */
 padding-top:60px;
 }
 
@@ -184,13 +182,13 @@ color:#aaa;
 <div class="nav">
 
 <div class="title">
-🏆 Ranked V12 System
+🏆 Ranked V13 System
 <span id="adminState" class="adminState">❌ Offline</span>
 </div>
 
 <div>
 <button onclick="openSettings()">⚙️</button>
-<button onclick="logout()">Logout</button>
+<button id="logoutBtn" onclick="logout()" style="display:none;">Logout</button>
 </div>
 
 </div>
@@ -200,11 +198,7 @@ color:#aaa;
 <!-- LEFT -->
 <div class="left">
 
-<!-- ADMIN TOOLBAR -->
-<div id="adminTools">
-<button onclick="toggleEdit()">✏️ Edit</button>
-<button onclick="toggleDelete()">🗑️ Delete</button>
-</div>
+<div id="adminTools"></div>
 
 <input id="search" class="search" placeholder="Brawler suchen..." oninput="renderList()">
 
@@ -242,14 +236,14 @@ color:#aaa;
 
 <div id="adminArea" style="display:none;">
 
-<h3>⬆️ Upload Brawler</h3>
+<h3>⬆️ Upload</h3>
 
 <input id="name" placeholder="Name">
 <input type="file" id="img">
 
 <button onclick="addBrawler()">Hinzufügen</button>
 
-<p class="info">Admin System aktiv</p>
+<p class="info">Admin aktiv</p>
 
 </div>
 
@@ -266,15 +260,12 @@ const brawlerList=document.getElementById("brawlerList");
 const search=document.getElementById("search");
 const adminArea=document.getElementById("adminArea");
 const adminState=document.getElementById("adminState");
+const logoutBtn=document.getElementById("logoutBtn");
 const adminTools=document.getElementById("adminTools");
 
 /* ADMIN */
 let isAdmin=false;
 const PASSWORD="1234";
-
-/* MODE */
-let editMode=true;
-let deleteMode=true;
 
 /* DATA */
 let BRAWLERS=JSON.parse(localStorage.getItem("brawlers")||"[]");
@@ -289,30 +280,34 @@ function openSettings(){
 panel.style.display="block";
 }
 
+/* LOGIN FIX */
 function login(){
+
 if(pass.value===PASSWORD){
 isAdmin=true;
+
 adminArea.style.display="block";
 adminTools.style.display="block";
+
+logoutBtn.style.display="inline-block";
+
 adminState.innerText="✅ Admin Online";
+
 }
 }
 
+/* LOGOUT FIX */
 function logout(){
+
 isAdmin=false;
+
+adminArea.style.display="none";
 adminTools.style.display="none";
+
+logoutBtn.style.display="none";
+
 adminState.innerText="❌ Offline";
-}
 
-/* MODES */
-function toggleEdit(){
-editMode=!editMode;
-renderList();
-}
-
-function toggleDelete(){
-deleteMode=!deleteMode;
-renderList();
 }
 
 /* ADD */
@@ -340,6 +335,7 @@ nameInput.value="";
 imgInput.value="";
 
 renderList();
+
 };
 
 reader.readAsDataURL(file);
@@ -348,7 +344,7 @@ reader.readAsDataURL(file);
 
 /* DELETE */
 function deleteBrawler(i){
-if(!isAdmin||!deleteMode)return;
+if(!isAdmin)return;
 
 if(confirm("Löschen?")){
 BRAWLERS.splice(i,1);
@@ -359,16 +355,16 @@ renderList();
 
 /* EDIT */
 function editBrawler(i){
-if(!isAdmin||!editMode)return;
+if(!isAdmin)return;
 
 let newName=prompt("Name:",BRAWLERS[i].name);
 if(newName)BRAWLERS[i].name=newName;
 
-let fileInput=document.createElement("input");
-fileInput.type="file";
+let input=document.createElement("input");
+input.type="file";
 
-fileInput.onchange=function(){
-let file=fileInput.files[0];
+input.onchange=function(){
+let file=input.files[0];
 if(!file)return;
 
 let reader=new FileReader();
@@ -382,7 +378,7 @@ renderList();
 reader.readAsDataURL(file);
 };
 
-fileInput.click();
+input.click();
 }
 
 /* SLOT */
@@ -437,8 +433,8 @@ ${b.name}
 
 ${isAdmin?`
 <div class="icon">
-${deleteMode?`<button onclick="deleteBrawler(${i})">🗑️</button>`:""}
-${editMode?`<button onclick="editBrawler(${i})">✏️</button>`:""}
+<button onclick="deleteBrawler(${i})">🗑️</button>
+<button onclick="editBrawler(${i})">✏️</button>
 </div>`:""}
 </div>
 `).join("");
