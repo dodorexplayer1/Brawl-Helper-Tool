@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Brawl Ranked Tool V8.7</title>
+<title>Brawl Ranked Tool V8.8</title>
 
 <style>
 body{
@@ -38,6 +38,7 @@ display:flex;
 height:90vh;
 }
 
+/* LEFT */
 .left{
 width:25%;
 background:#111;
@@ -45,12 +46,6 @@ padding:10px;
 overflow-y:auto;
 }
 
-.center{
-width:75%;
-padding:10px;
-}
-
-/* SEARCH */
 .search{
 width:100%;
 padding:8px;
@@ -75,6 +70,12 @@ gap:10px;
 width:40px;
 height:40px;
 border-radius:6px;
+}
+
+/* CENTER */
+.center{
+width:75%;
+padding:10px;
 }
 
 /* TEAMS */
@@ -115,7 +116,7 @@ background:#111;
 padding:20px;
 border-radius:12px;
 display:none;
-width:300px;
+width:320px;
 }
 
 input{
@@ -136,7 +137,7 @@ color:#aaa;
 <body>
 
 <div class="nav">
-<div class="title">🏆 Ranked</div>
+<div class="title">🏆 Ranked System</div>
 <button onclick="openSettings()">⚙️</button>
 </div>
 
@@ -168,7 +169,7 @@ color:#aaa;
 <div class="slot ally" onclick="selectSlot('ally',2)">?</div>
 </div>
 
-<h3>⭐ Empfohlen (hier baust DU dein System)</h3>
+<h3>⭐ Empfohlen (frei für dein System)</h3>
 <div id="recommend"></div>
 
 </div>
@@ -184,11 +185,11 @@ color:#aaa;
 
 <div id="adminArea" style="display:none;">
 
-<h3>⬆️ Brawler hinzufügen</h3>
+<h3>⬆️ Brawler Upload</h3>
 
-<input id="name" placeholder="Name">
+<input id="name" placeholder="Brawler Name">
 
-<input type="file" id="img">
+<input type="file" id="img" accept="image/*">
 
 <button onclick="addBrawler()">Hinzufügen</button>
 
@@ -201,20 +202,20 @@ color:#aaa;
 <script>
 
 /* =========================
-   ADMIN SYSTEM
+   ADMIN
 ========================= */
 
 let isAdmin=false;
 const PASSWORD="1234";
 
 /* =========================
-   DATA STORAGE
+   STORAGE
 ========================= */
 
 let BRAWLERS=JSON.parse(localStorage.getItem("brawlers")||"[]");
 
 /* =========================
-   GAME STATE
+   STATE
 ========================= */
 
 let selectedSlot=null;
@@ -242,7 +243,7 @@ alert("Falsches Passwort ❌");
 }
 
 /* =========================
-   ADD BRAWLER
+   ADD BRAWLER (FIXED)
 ========================= */
 
 function addBrawler(){
@@ -252,17 +253,27 @@ alert("Kein Zugriff ❌");
 return;
 }
 
-if(!name.value || !img.files[0]){
-alert("Name oder Bild fehlt ❌");
+let brawlerName = name.value.trim();
+let fileInput = document.getElementById("img");
+let file = fileInput.files[0];
+
+/* SAFETY CHECK */
+if(brawlerName === ""){
+alert("Name fehlt ❌");
 return;
 }
 
-let reader=new FileReader();
+if(!file){
+alert("Bild fehlt ❌");
+return;
+}
 
-reader.onload=function(){
+let reader = new FileReader();
+
+reader.onload = function(){
 
 let newBrawler={
-name:name.value,
+name:brawlerName,
 img:reader.result
 };
 
@@ -273,12 +284,12 @@ localStorage.setItem("brawlers",JSON.stringify(BRAWLERS));
 alert("Brawler hinzugefügt ✅");
 
 name.value="";
-img.value="";
+fileInput.value="";
 
 renderList();
 };
 
-reader.readAsDataURL(img.files[0]);
+reader.readAsDataURL(file);
 
 }
 
@@ -297,7 +308,7 @@ selectedSlot={team,index};
 function pickBrawler(index){
 
 if(!selectedSlot){
-alert("Bitte zuerst Slot auswählen!");
+alert("Bitte Slot auswählen!");
 return;
 }
 
@@ -325,17 +336,13 @@ let a=document.querySelectorAll("#allyTeam .slot");
 e.forEach((slot,i)=>{
 if(enemy[i]){
 slot.innerHTML=`<img src="${enemy[i].img}"><br>${enemy[i].name}`;
-}else{
-slot.innerHTML="?";
-}
+}else slot.innerHTML="?";
 });
 
 a.forEach((slot,i)=>{
 if(ally[i]){
 slot.innerHTML=`<img src="${ally[i].img}"><br>${ally[i].name}`;
-}else{
-slot.innerHTML="?";
-}
+}else slot.innerHTML="?";
 });
 
 }
@@ -360,10 +367,7 @@ ${x.b.name}
 
 }
 
-/* =========================
-   INIT
-========================= */
-
+/* INIT */
 renderList();
 
 </script>
