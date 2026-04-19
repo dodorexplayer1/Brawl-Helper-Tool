@@ -2,23 +2,21 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Brawl Helper Tool V8.5</title>
+<title>Brawl Ranked Tool</title>
 
 <style>
 body{
+margin:0;
 font-family:Arial;
 background:#0a0a0a;
 color:white;
-margin:0;
 }
 
+/* NAV */
 .nav{
-display:flex;
-justify-content:space-around;
 background:#111;
 padding:10px;
-position:sticky;
-top:0;
+text-align:center;
 }
 
 .nav button{
@@ -30,71 +28,104 @@ border-radius:8px;
 cursor:pointer;
 }
 
-.page{display:none;padding:20px;}
-.active{display:block;}
-
-.card{
-background:#1b1b1b;
-padding:15px;
-border-radius:12px;
-margin:10px;
+/* LAYOUT */
+.container{
+display:flex;
+height:90vh;
 }
 
-.tag{
-padding:3px 6px;
-background:#333;
+/* LEFT PANEL */
+.left{
+width:25%;
+background:#111;
+padding:10px;
+overflow-y:auto;
+}
+
+.search{
+width:100%;
+padding:8px;
+margin-bottom:10px;
 border-radius:6px;
-font-size:12px;
-margin-left:5px;
+border:none;
 }
+
+/* CENTER */
+.center{
+width:75%;
+padding:10px;
+}
+
+/* TEAMS */
+.team{
+display:flex;
+justify-content:center;
+margin:20px;
+}
+
+.slot{
+width:120px;
+height:120px;
+background:#1b1b1b;
+margin:10px;
+display:flex;
+align-items:center;
+justify-content:center;
+border-radius:12px;
+cursor:pointer;
+}
+
+.enemy{border:2px solid red;}
+.ally{border:2px solid green;}
+
+/* BRAWLER LIST */
+.brawler{
+background:#1b1b1b;
+padding:8px;
+margin:5px 0;
+border-radius:8px;
+cursor:pointer;
+}
+
 </style>
 </head>
 
 <body>
 
 <div class="nav">
-<button onclick="go('home')">🏠 Home</button>
-<button onclick="go('team')">🧑‍🤝‍🧑 Team</button>
-<button onclick="go('analyze')">🧠 Analyse</button>
+<button onclick="goRanked()">🏆 Ranked</button>
 </div>
 
-<h2 style="text-align:center;color:#4dff88;">🔥 V8.5 FULL META SYSTEM</h2>
+<div id="ranked" class="container">
 
-<!-- HOME -->
-<div id="home" class="page active">
+<!-- LEFT -->
+<div class="left">
 
-<div class="card">
-<h3>📊 BRAWLER SYSTEM READY</h3>
-<p>Counter + Meta + Team AI aktiv</p>
-</div>
+<input id="search" class="search" placeholder="Brawler suchen..." oninput="renderList()">
+
+<div id="brawlerList"></div>
 
 </div>
 
-<!-- TEAM FINDER -->
-<div id="team" class="page">
+<!-- CENTER -->
+<div class="center">
 
-<div class="card">
-<h3>🧑‍🤝‍🧑 TEAM BUILDER</h3>
-
-<button onclick="showTeam()">Auto Team erstellen</button>
-
-<div id="teamOut"></div>
-
+<h2>🔴 Gegner</h2>
+<div class="team" id="enemyTeam">
+<div class="slot enemy" onclick="selectSlot('enemy',0)">?</div>
+<div class="slot enemy" onclick="selectSlot('enemy',1)">?</div>
+<div class="slot enemy" onclick="selectSlot('enemy',2)">?</div>
 </div>
 
+<h2>🟢 Dein Team</h2>
+<div class="team" id="allyTeam">
+<div class="slot ally" onclick="selectSlot('ally',0)">?</div>
+<div class="slot ally" onclick="selectSlot('ally',1)">?</div>
+<div class="slot ally" onclick="selectSlot('ally',2)">?</div>
 </div>
 
-<!-- ANALYZE -->
-<div id="analyze" class="page">
-
-<div class="card">
-<h3>🧠 META ANALYSE</h3>
-
-<input id="enemy" placeholder="Enemy Brawler z.B. Colt">
-
-<button onclick="analyzeEnemy()">Analyse</button>
-
-<div id="out"></div>
+<h3>⭐ Empfohlene Brawler (hier baust DU dein System)</h3>
+<div id="recommend"></div>
 
 </div>
 
@@ -103,15 +134,7 @@ margin-left:5px;
 <script>
 
 /* =========================
-   NAV
-========================= */
-function go(id){
-document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-document.getElementById(id).classList.add("active");
-}
-
-/* =========================
-   BRAWLER DATA (1–10)
+   BRAWLER LIST (1–10)
 ========================= */
 const BRAWLERS=[
 "Shelly","Nita","Colt","Bull","Brock",
@@ -119,84 +142,79 @@ const BRAWLERS=[
 ];
 
 /* =========================
-   COUNTERS
+   STATE
 ========================= */
-const COUNTERS={
-"Shelly":["Colt","Brock"],
-"Colt":["Bull","Edgar"],
-"Bull":["Shelly"],
-"Brock":["Edgar","Mortis"],
-"Barley":["Crow","Edgar"],
-"Poco":["Colt","Brock"],
-"Rosa":["Colt","Spike"],
-"Jessie":["Piper","Brock"]
-};
+let selectedSlot=null;
+let enemy=[null,null,null];
+let ally=[null,null,null];
 
 /* =========================
-   META TIERS
+   NAV
 ========================= */
-const META={
-"Shelly":"A",
-"Nita":"B",
-"Colt":"S",
-"Bull":"B",
-"Brock":"S",
-"El Primo":"B",
-"Barley":"B",
-"Poco":"A",
-"Rosa":"A",
-"Jessie":"A"
-};
+function goRanked(){
+document.getElementById("ranked").style.display="flex";
+}
 
 /* =========================
-   TEAM BUILDER
+   SELECT SLOT
 ========================= */
-function showTeam(){
+function selectSlot(team,index){
+selectedSlot={team,index};
+}
 
-let team={
-tank:null,
-dps:null,
-support:null
-};
+/* =========================
+   PICK BRAWLER
+========================= */
+function pickBrawler(name){
 
-BRAWLERS.forEach(b=>{
+if(!selectedSlot)return;
 
-if(b==="Bull"||b==="El Primo"||b==="Rosa") team.tank=b;
-if(b==="Colt"||b==="Brock") team.dps=b;
-if(b==="Poco"||b==="Jessie") team.support=b;
+if(selectedSlot.team==="enemy"){
+enemy[selectedSlot.index]=name;
+}else{
+ally[selectedSlot.index]=name;
+}
 
+updateUI();
+}
+
+/* =========================
+   UPDATE UI
+========================= */
+function updateUI(){
+
+let enemySlots=document.querySelectorAll("#enemyTeam .slot");
+let allySlots=document.querySelectorAll("#allyTeam .slot");
+
+enemySlots.forEach((s,i)=>{
+s.innerHTML=enemy[i]||"?";
 });
 
-teamOut.innerHTML=`
-<div class="card">
-🛡 Tank: ${team.tank}<br>
-⚔ DPS: ${team.dps}<br>
-💚 Support: ${team.support}
-</div>
-`;
+allySlots.forEach((s,i)=>{
+s.innerHTML=ally[i]||"?";
+});
 
 }
 
 /* =========================
-   COUNTER ANALYZER
+   RENDER LIST
 ========================= */
-function analyzeEnemy(){
+function renderList(){
 
-let e=enemy.value;
+let val=search.value.toLowerCase();
 
-let counters=COUNTERS[e]||["No Data"];
-
-out.innerHTML=`
-<div class="card">
-🎯 Enemy: ${e}<br>
-🔥 Best Counters:<br>
-${counters.map(c=>"• "+c).join("<br>")}
-<br><br>
-📊 Meta Tier: ${META[e]||"Unknown"}
+brawlerList.innerHTML=BRAWLERS
+.filter(b=>b.toLowerCase().includes(val))
+.map(b=>`
+<div class="brawler" onclick="pickBrawler('${b}')">
+${b}
 </div>
-`;
+`).join("");
 
 }
+
+/* INIT */
+renderList();
 
 </script>
 
