@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Brawl Ranked Tool V8.8</title>
+<title>Ranked Brawler System V9</title>
 
 <style>
 body{
@@ -20,9 +20,7 @@ justify-content:space-between;
 align-items:center;
 }
 
-.title{
-font-size:18px;
-}
+.title{font-size:18px;}
 
 button{
 background:#1b1b1b;
@@ -54,7 +52,7 @@ border-radius:6px;
 border:none;
 }
 
-/* BRAWLER */
+/* BRAWLER LIST */
 .brawler{
 background:#1b1b1b;
 padding:8px;
@@ -137,7 +135,7 @@ color:#aaa;
 <body>
 
 <div class="nav">
-<div class="title">🏆 Ranked System</div>
+<div class="title">🏆 Ranked V9 System</div>
 <button onclick="openSettings()">⚙️</button>
 </div>
 
@@ -169,7 +167,7 @@ color:#aaa;
 <div class="slot ally" onclick="selectSlot('ally',2)">?</div>
 </div>
 
-<h3>⭐ Empfohlen (frei für dein System)</h3>
+<h3>⭐ Empfohlen (frei)</h3>
 <div id="recommend"></div>
 
 </div>
@@ -188,18 +186,29 @@ color:#aaa;
 <h3>⬆️ Brawler Upload</h3>
 
 <input id="name" placeholder="Brawler Name">
-
 <input type="file" id="img" accept="image/*">
 
 <button onclick="addBrawler()">Hinzufügen</button>
 
-<p class="info">Nur Admin kann Brawler hinzufügen</p>
+<p class="info">Nur Admin kann Inhalte ändern</p>
 
 </div>
 
 </div>
 
 <script>
+
+/* =========================
+   DOM FIX (WICHTIG)
+========================= */
+
+const panel=document.getElementById("panel");
+const pass=document.getElementById("pass");
+const nameInput=document.getElementById("name");
+const imgInput=document.getElementById("img");
+const brawlerList=document.getElementById("brawlerList");
+const search=document.getElementById("search");
+const adminArea=document.getElementById("adminArea");
 
 /* =========================
    ADMIN
@@ -223,7 +232,7 @@ let enemy=[null,null,null];
 let ally=[null,null,null];
 
 /* =========================
-   SETTINGS PANEL
+   SETTINGS
 ========================= */
 
 function openSettings(){
@@ -235,7 +244,7 @@ function login(){
 if(pass.value===PASSWORD){
 isAdmin=true;
 adminArea.style.display="block";
-alert("Admin Login erfolgreich ✅");
+alert("Login OK ✅");
 }else{
 alert("Falsches Passwort ❌");
 }
@@ -243,7 +252,7 @@ alert("Falsches Passwort ❌");
 }
 
 /* =========================
-   ADD BRAWLER (FIXED)
+   ADD BRAWLER (FINAL FIX)
 ========================= */
 
 function addBrawler(){
@@ -253,12 +262,12 @@ alert("Kein Zugriff ❌");
 return;
 }
 
-let brawlerName = name.value.trim();
-let fileInput = document.getElementById("img");
-let file = fileInput.files[0];
+let brawlerName=nameInput.value.trim();
+let file=imgInput.files[0];
 
-/* SAFETY CHECK */
-if(brawlerName === ""){
+console.log("UPLOAD:", brawlerName, file);
+
+if(brawlerName===""){
 alert("Name fehlt ❌");
 return;
 }
@@ -268,9 +277,9 @@ alert("Bild fehlt ❌");
 return;
 }
 
-let reader = new FileReader();
+let reader=new FileReader();
 
-reader.onload = function(){
+reader.onload=function(){
 
 let newBrawler={
 name:brawlerName,
@@ -281,12 +290,15 @@ BRAWLERS.push(newBrawler);
 
 localStorage.setItem("brawlers",JSON.stringify(BRAWLERS));
 
-alert("Brawler hinzugefügt ✅");
+console.log("Gespeichert:", newBrawler);
 
-name.value="";
-fileInput.value="";
+nameInput.value="";
+imgInput.value="";
 
+/* FORCE UPDATE */
 renderList();
+
+alert("Brawler hinzugefügt ✅");
 };
 
 reader.readAsDataURL(file);
@@ -308,7 +320,7 @@ selectedSlot={team,index};
 function pickBrawler(index){
 
 if(!selectedSlot){
-alert("Bitte Slot auswählen!");
+alert("Erst Slot wählen!");
 return;
 }
 
@@ -325,7 +337,7 @@ updateUI();
 }
 
 /* =========================
-   UPDATE UI
+   UI UPDATE
 ========================= */
 
 function updateUI(){
@@ -334,36 +346,42 @@ let e=document.querySelectorAll("#enemyTeam .slot");
 let a=document.querySelectorAll("#allyTeam .slot");
 
 e.forEach((slot,i)=>{
-if(enemy[i]){
-slot.innerHTML=`<img src="${enemy[i].img}"><br>${enemy[i].name}`;
-}else slot.innerHTML="?";
+slot.innerHTML=enemy[i]
+?`<img src="${enemy[i].img}"><br>${enemy[i].name}`
+:"?";
 });
 
 a.forEach((slot,i)=>{
-if(ally[i]){
-slot.innerHTML=`<img src="${ally[i].img}"><br>${ally[i].name}`;
-}else slot.innerHTML="?";
+slot.innerHTML=ally[i]
+?`<img src="${ally[i].img}"><br>${ally[i].name}`
+:"?";
 });
 
 }
 
 /* =========================
-   RENDER LIST
+   RENDER LIST (FIXED)
 ========================= */
 
 function renderList(){
 
-let val=search.value.toLowerCase();
+let val=search.value ? search.value.toLowerCase() : "";
 
-brawlerList.innerHTML=BRAWLERS
+let list=BRAWLERS
 .map((b,i)=>({b,i}))
-.filter(x=>x.b.name.toLowerCase().includes(val))
-.map(x=>`
+.filter(x=>{
+if(val==="") return true;
+return x.b.name.toLowerCase().includes(val);
+});
+
+brawlerList.innerHTML=list.map(x=>`
 <div class="brawler" onclick="pickBrawler(${x.i})">
 <img src="${x.b.img}">
 ${x.b.name}
 </div>
 `).join("");
+
+console.log("Render:", BRAWLERS.length);
 
 }
 
