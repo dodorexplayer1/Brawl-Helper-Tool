@@ -2,468 +2,329 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Ranked System V14</title>
-
+<title>BrawlRankedHelper</title>
 <style>
-body{
-margin:0;
-font-family:Arial;
-background:#0a0a0a;
-color:white;
+
+body {
+  font-family: Arial;
+  margin: 0;
+  background: #0f0f1a;
+  color: white;
 }
 
-/* NAV */
-.nav{
-background:#111;
-padding:10px;
-display:flex;
-justify-content:space-between;
-align-items:center;
+/* NAVBAR */
+#navbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px;
+  background: #1c1c2e;
+  position: sticky;
+  top: 0;
 }
 
-.title{font-size:18px;}
-
-.adminState{
-font-size:12px;
-color:#aaa;
-margin-left:10px;
-}
-
-/* BUTTONS */
-button{
-background:#1b1b1b;
-color:white;
-border:none;
-padding:8px 12px;
-border-radius:8px;
-cursor:pointer;
-margin:3px;
+.nav-left button {
+  margin-right: 10px;
 }
 
 /* LAYOUT */
-.container{
-display:flex;
-height:90vh;
+.page {
+  display: none;
+  padding: 20px;
 }
 
-/* LEFT */
-.left{
-width:25%;
-background:#111;
-padding:10px;
-overflow-y:auto;
-padding-top:60px;
+.active {
+  display: block;
 }
 
-/* ADMIN TOOLBAR */
-#adminTools{
-position:absolute;
-top:10px;
-left:10px;
-right:10px;
-display:none;
-background:#0f0f0f;
-padding:5px;
-border-radius:8px;
-z-index:10;
+/* RANKED UI */
+#rankedContainer {
+  display: flex;
+  gap: 20px;
 }
 
-/* SEARCH */
-.search{
-width:100%;
-padding:8px;
-margin-bottom:10px;
-border-radius:6px;
-border:none;
-margin-top:10px;
+#enemyTeam, #yourTeam {
+  flex: 1;
+  padding: 10px;
+  background: #1a1a2a;
 }
 
-/* BRAWLER */
-.brawler{
-background:#1b1b1b;
-padding:8px;
-margin:5px 0;
-border-radius:8px;
-cursor:pointer;
-display:flex;
-align-items:center;
-gap:10px;
-position:relative;
+#searchPanel {
+  width: 250px;
+  background: #222;
+  padding: 10px;
 }
 
-.brawler img{
-width:40px;
-height:40px;
-border-radius:6px;
+/* BRAWLER GRID */
+.brawler {
+  padding: 5px;
+  background: #333;
+  margin: 5px 0;
+  cursor: pointer;
 }
 
-/* ICONS */
-.icon{
-position:absolute;
-top:4px;
-right:4px;
-display:flex;
-gap:4px;
+/* ADMIN */
+.adminBtn {
+  background: red;
+  color: white;
+  padding: 5px;
+  cursor: pointer;
 }
 
-.icon button{
-font-size:10px;
-padding:2px 5px;
-border-radius:4px;
-background:#333;
+/* MODAL */
+#modal {
+  display: none;
+  position: fixed;
+  top: 20%;
+  left: 35%;
+  width: 30%;
+  background: #222;
+  padding: 20px;
+  z-index: 1000;
 }
 
-/* CENTER */
-.center{
-width:75%;
-padding:10px;
-}
-
-/* TEAMS */
-.team{
-display:flex;
-justify-content:center;
-margin:20px;
-}
-
-.slot{
-width:120px;
-height:120px;
-background:#1b1b1b;
-margin:10px;
-display:flex;
-align-items:center;
-justify-content:center;
-border-radius:12px;
-flex-direction:column;
-cursor:pointer;
-}
-
-.slot img{
-width:60px;
-height:60px;
-}
-
-.enemy{border:2px solid red;}
-.ally{border:2px solid green;}
-
-/* PANEL */
-.panel{
-position:fixed;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-background:#111;
-padding:20px;
-border-radius:12px;
-display:none;
-width:320px;
-z-index:20;
-}
-
-/* CLOSE BUTTON */
-.closeBtn{
-position:absolute;
-top:10px;
-right:10px;
-background:#333;
-border:none;
-color:white;
-border-radius:6px;
-padding:4px 8px;
-cursor:pointer;
-}
-
-input{
-width:100%;
-padding:8px;
-margin:5px 0;
-border-radius:6px;
-border:none;
-}
-
-.info{
-font-size:12px;
-color:#aaa;
-}
 </style>
 </head>
 
 <body>
 
-<!-- NAV -->
-<div class="nav">
+<!-- NAVBAR -->
+<div id="navbar">
 
-<div class="title">
-🏆 Ranked V14 System
-<span id="adminState" class="adminState">❌ Offline</span>
+  <div class="nav-left">
+    <button onclick="showPage('home')">Home</button>
+    <button onclick="showPage('ranked')">Ranked</button>
+  </div>
+
+  <div class="nav-right">
+    <span id="userStatus">Nicht eingeloggt</span>
+    <button onclick="logout()" id="logoutBtn" style="display:none;">Logout</button>
+  </div>
+
 </div>
+
+<!-- HOME PAGE -->
+<div id="home" class="page active">
+
+<h2>Login / Register</h2>
 
 <div>
-<button onclick="togglePanel()">⚙️</button>
-<button id="logoutBtn" onclick="logout()" style="display:none;">Logout</button>
+  <h3>Register</h3>
+  <input id="regUser" placeholder="Username"><br>
+  <input id="regEmail" placeholder="Email"><br>
+  <input id="regPass" type="password" placeholder="Passwort"><br>
+  <button onclick="register()">Registrieren</button>
+</div>
+
+<hr>
+
+<div>
+  <h3>Login</h3>
+  <input id="logEmail" placeholder="Email"><br>
+  <input id="logPass" type="password" placeholder="Passwort"><br>
+  <button onclick="login()">Login</button>
 </div>
 
 </div>
 
-<div class="container">
+<!-- RANKED PAGE -->
+<div id="ranked" class="page">
 
-<!-- LEFT -->
-<div class="left">
+<h2>Ranked Mode</h2>
 
-<div id="adminTools"></div>
+<div id="rankedContainer">
 
-<input id="search" class="search" placeholder="Brawler suchen..." oninput="renderList()">
+  <!-- SEARCH / BRAWLERS -->
+  <div id="searchPanel">
+    <h4>Brawler Suche</h4>
+    <input placeholder="Search..." id="searchInput">
+    <div id="brawlerList"></div>
 
-<div id="brawlerList"></div>
+    <button onclick="openUpload()" id="adminUploadBtn" style="display:none;">
+      Upload Brawler
+    </button>
+  </div>
 
-</div>
+  <!-- ENEMY TEAM -->
+  <div id="enemyTeam">
+    <h3>Enemy Team</h3>
+    <div id="enemySlots">3 Slots</div>
+  </div>
 
-<!-- CENTER -->
-<div class="center">
-
-<h2>🔴 Gegner</h2>
-<div class="team" id="enemyTeam">
-<div class="slot enemy" onclick="selectSlot('enemy',0)">?</div>
-<div class="slot enemy" onclick="selectSlot('enemy',1)">?</div>
-<div class="slot enemy" onclick="selectSlot('enemy',2)">?</div>
-</div>
-
-<h2>🟢 Dein Team</h2>
-<div class="team" id="allyTeam">
-<div class="slot ally" onclick="selectSlot('ally',0)">?</div>
-<div class="slot ally" onclick="selectSlot('ally',1)">?</div>
-<div class="slot ally" onclick="selectSlot('ally',2)">?</div>
-</div>
-
-</div>
-
-</div>
-
-<!-- PANEL -->
-<div id="panel" class="panel">
-
-<button class="closeBtn" onclick="closePanel()">✖</button>
-
-<h3>🔐 Admin Login</h3>
-<input id="pass" placeholder="Passwort">
-<button onclick="login()">Login</button>
-
-<div id="adminArea" style="display:none;">
-
-<h3>⬆️ Upload</h3>
-
-<input id="name" placeholder="Name">
-<input type="file" id="img">
-
-<button onclick="addBrawler()">Hinzufügen</button>
-
-<p class="info">Admin aktiv</p>
+  <!-- YOUR TEAM -->
+  <div id="yourTeam">
+    <h3>Your Team</h3>
+    <div id="yourSlots">3 Slots</div>
+  </div>
 
 </div>
 
 </div>
 
-<script>
+<!-- UPLOAD MODAL -->
+<div id="modal">
+  <h3>Brawler Upload</h3>
+  <input id="brawlerName" placeholder="Name"><br>
+  <input id="brawlerImg" placeholder="Image URL"><br>
+  <button onclick="uploadBrawler()">Upload</button>
+  <button onclick="closeModal()">X</button>
+</div>
 
-/* DOM */
-const panel=document.getElementById("panel");
-const pass=document.getElementById("pass");
-const nameInput=document.getElementById("name");
-const imgInput=document.getElementById("img");
-const brawlerList=document.getElementById("brawlerList");
-const search=document.getElementById("search");
-const adminArea=document.getElementById("adminArea");
-const adminState=document.getElementById("adminState");
-const logoutBtn=document.getElementById("logoutBtn");
-const adminTools=document.getElementById("adminTools");
+<!-- FIREBASE -->
+<script type="module">
 
-/* ADMIN */
-let isAdmin=false;
-const PASSWORD="1234";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+getAuth,
+createUserWithEmailAndPassword,
+signInWithEmailAndPassword,
+signOut,
+onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-/* DATA */
-let BRAWLERS=JSON.parse(localStorage.getItem("brawlers")||"[]");
+import {
+getFirestore,
+doc,
+setDoc,
+getDoc,
+collection,
+addDoc,
+getDocs
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/* STATE */
-let selectedSlot=null;
-let enemy=[null,null,null];
-let ally=[null,null,null];
-
-/* PANEL OPEN/CLOSE FIX */
-function togglePanel(){
-panel.style.display = panel.style.display==="block" ? "none":"block";
-}
-
-function closePanel(){
-panel.style.display="none";
-}
-
-/* CLOSE OUTSIDE CLICK */
-window.onclick=function(e){
-if(e.target===panel){
-panel.style.display="none";
-}
+// FIREBASE CONFIG
+const firebaseConfig = {
+apiKey: "XXX",
+authDomain: "XXX",
+projectId: "brawlrankedhelper",
+storageBucket: "XXX",
+messagingSenderId: "XXX",
+appId: "XXX"
 };
 
-/* LOGIN */
-function login(){
-if(pass.value===PASSWORD){
-isAdmin=true;
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-adminArea.style.display="block";
-adminTools.style.display="block";
+let currentUser = null;
 
-logoutBtn.style.display="inline-block";
+/* ================= NAV ================= */
 
-adminState.innerText="✅ Admin Online";
-}
-}
-
-/* LOGOUT */
-function logout(){
-isAdmin=false;
-
-adminArea.style.display="none";
-adminTools.style.display="none";
-
-logoutBtn.style.display="none";
-
-adminState.innerText="❌ Offline";
+window.showPage = function(page){
+document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+document.getElementById(page).classList.add("active");
 }
 
-/* ADD */
-function addBrawler(){
+/* ================= REGISTER ================= */
 
-if(!isAdmin)return;
+window.register = async function(){
+let username = regUser.value;
+let email = regEmail.value;
+let pass = regPass.value;
 
-let nameVal=nameInput.value.trim();
-let file=imgInput.files[0];
+let userCred = await createUserWithEmailAndPassword(auth,email,pass);
 
-if(!nameVal||!file)return;
-
-let reader=new FileReader();
-
-reader.onload=function(){
-
-BRAWLERS.push({
-name:nameVal,
-img:reader.result
+await setDoc(doc(db,"users",userCred.user.uid),{
+username: username,
+email: email,
+isAdmin: false
 });
 
-localStorage.setItem("brawlers",JSON.stringify(BRAWLERS));
-
-nameInput.value="";
-imgInput.value="";
-
-renderList();
-
-};
-
-reader.readAsDataURL(file);
-
 }
 
-/* DELETE */
-function deleteBrawler(i){
-if(!isAdmin)return;
+/* ================= LOGIN ================= */
 
-if(confirm("Löschen?")){
-BRAWLERS.splice(i,1);
-localStorage.setItem("brawlers",JSON.stringify(BRAWLERS));
-renderList();
-}
-}
+window.login = async function(){
+let email = logEmail.value;
+let pass = logPass.value;
 
-/* EDIT */
-function editBrawler(i){
-if(!isAdmin)return;
+let userCred = await signInWithEmailAndPassword(auth,email,pass);
 
-let newName=prompt("Name:",BRAWLERS[i].name);
-if(newName)BRAWLERS[i].name=newName;
-
-let input=document.createElement("input");
-input.type="file";
-
-input.onchange=function(){
-let file=input.files[0];
-if(!file)return;
-
-let reader=new FileReader();
-
-reader.onload=function(){
-BRAWLERS[i].img=reader.result;
-localStorage.setItem("brawlers",JSON.stringify(BRAWLERS));
-renderList();
-};
-
-reader.readAsDataURL(file);
-};
-
-input.click();
-}
-
-/* SLOT */
-function selectSlot(team,i){
-selectedSlot={team,i};
-}
-
-/* PICK */
-function pickBrawler(i){
-
-if(!selectedSlot)return;
-
-let b=BRAWLERS[i];
-
-if(selectedSlot.team==="enemy"){
-enemy[selectedSlot.i]=b;
-}else{
-ally[selectedSlot.i]=b;
-}
+let snap = await getDoc(doc(db,"users",userCred.user.uid));
+currentUser = snap.data();
 
 updateUI();
-
+loadBrawlers();
 }
 
-/* UI */
+/* ================= LOGOUT ================= */
+
+window.logout = async function(){
+await signOut(auth);
+currentUser = null;
+updateUI();
+}
+
+/* ================= AUTH STATE ================= */
+
+onAuthStateChanged(auth, async (user)=>{
+if(user){
+let snap = await getDoc(doc(db,"users",user.uid));
+currentUser = snap.data();
+updateUI();
+loadBrawlers();
+}
+});
+
+/* ================= UI ================= */
+
 function updateUI(){
 
-document.querySelectorAll("#enemyTeam .slot").forEach((s,i)=>{
-s.innerHTML=enemy[i]?`<img src="${enemy[i].img}"><br>${enemy[i].name}`:"?";
-});
+if(currentUser){
+userStatus.innerText = "Logged in: " + currentUser.username;
+logoutBtn.style.display = "block";
 
-document.querySelectorAll("#allyTeam .slot").forEach((s,i)=>{
-s.innerHTML=ally[i]?`<img src="${ally[i].img}"><br>${ally[i].name}`:"?";
-});
+if(currentUser.isAdmin){
+adminUploadBtn.style.display = "block";
+}
+}else{
+userStatus.innerText = "Nicht eingeloggt";
+logoutBtn.style.display = "none";
+adminUploadBtn.style.display = "none";
+}
 
 }
 
-/* RENDER */
-function renderList(){
+/* ================= BRAWLERS ================= */
 
-let val=search.value?search.value.toLowerCase():"";
-
-let list=BRAWLERS.filter(b=>{
-if(val==="")return true;
-return b.name.toLowerCase().includes(val);
-});
-
-brawlerList.innerHTML=list.map((b,i)=>`
-<div class="brawler" onclick="pickBrawler(${i})">
-<img src="${b.img}">
-${b.name}
-
-${isAdmin?`
-<div class="icon">
-<button onclick="deleteBrawler(${i})">🗑️</button>
-<button onclick="editBrawler(${i})">✏️</button>
-</div>`:""}
-</div>
-`).join("");
-
+window.openUpload = function(){
+modal.style.display = "block";
 }
 
-renderList();
+window.closeModal = function(){
+modal.style.display = "none";
+}
+
+window.uploadBrawler = async function(){
+
+if(!currentUser?.isAdmin) return;
+
+await addDoc(collection(db,"brawlers"),{
+name: brawlerName.value,
+img: brawlerImg.value
+});
+
+closeModal();
+loadBrawlers();
+}
+
+window.loadBrawlers = async function(){
+
+let list = document.getElementById("brawlerList");
+list.innerHTML = "";
+
+let snap = await getDocs(collection(db,"brawlers"));
+
+snap.forEach(doc=>{
+let b = doc.data();
+
+let div = document.createElement("div");
+div.className = "brawler";
+div.innerHTML = b.name;
+
+list.appendChild(div);
+});
+
+}
 
 </script>
 
