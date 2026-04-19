@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Brawl Ranked Tool</title>
+<title>Brawl Ranked Tool V8.7</title>
 
 <style>
 body{
@@ -17,6 +17,11 @@ background:#111;
 padding:10px;
 display:flex;
 justify-content:space-between;
+align-items:center;
+}
+
+.title{
+font-size:18px;
 }
 
 button{
@@ -28,7 +33,6 @@ border-radius:8px;
 cursor:pointer;
 }
 
-/* LAYOUT */
 .container{
 display:flex;
 height:90vh;
@@ -46,6 +50,7 @@ width:75%;
 padding:10px;
 }
 
+/* SEARCH */
 .search{
 width:100%;
 padding:8px;
@@ -89,6 +94,7 @@ align-items:center;
 justify-content:center;
 border-radius:12px;
 flex-direction:column;
+cursor:pointer;
 }
 
 .slot img{
@@ -109,6 +115,20 @@ background:#111;
 padding:20px;
 border-radius:12px;
 display:none;
+width:300px;
+}
+
+input{
+width:100%;
+padding:8px;
+margin:5px 0;
+border-radius:6px;
+border:none;
+}
+
+.info{
+font-size:12px;
+color:#aaa;
 }
 </style>
 </head>
@@ -116,7 +136,7 @@ display:none;
 <body>
 
 <div class="nav">
-<div>🏆 Ranked</div>
+<div class="title">🏆 Ranked</div>
 <button onclick="openSettings()">⚙️</button>
 </div>
 
@@ -124,8 +144,11 @@ display:none;
 
 <!-- LEFT -->
 <div class="left">
-<input id="search" class="search" placeholder="Suchen..." oninput="renderList()">
+
+<input id="search" class="search" placeholder="Brawler suchen..." oninput="renderList()">
+
 <div id="brawlerList"></div>
+
 </div>
 
 <!-- CENTER -->
@@ -145,89 +168,140 @@ display:none;
 <div class="slot ally" onclick="selectSlot('ally',2)">?</div>
 </div>
 
-<h3>⭐ Empfohlen (baust du selbst)</h3>
+<h3>⭐ Empfohlen (hier baust DU dein System)</h3>
 <div id="recommend"></div>
 
 </div>
 
 </div>
 
-<!-- SETTINGS PANEL -->
+<!-- SETTINGS -->
 <div id="panel" class="panel">
 
 <h3>🔐 Admin Login</h3>
-<input id="pass" placeholder="Passwort"><br><br>
+<input id="pass" placeholder="Passwort">
 <button onclick="login()">Login</button>
 
 <div id="adminArea" style="display:none;">
+
 <h3>⬆️ Brawler hinzufügen</h3>
-<input id="name" placeholder="Name"><br><br>
-<input type="file" id="img"><br><br>
+
+<input id="name" placeholder="Name">
+
+<input type="file" id="img">
+
 <button onclick="addBrawler()">Hinzufügen</button>
+
+<p class="info">Nur Admin kann Brawler hinzufügen</p>
+
 </div>
 
 </div>
 
 <script>
 
-/* ADMIN */
-let isAdmin=false;
-const PASSWORD="1234"; // 👉 kannst du ändern
+/* =========================
+   ADMIN SYSTEM
+========================= */
 
-/* DATA */
+let isAdmin=false;
+const PASSWORD="1234";
+
+/* =========================
+   DATA STORAGE
+========================= */
+
 let BRAWLERS=JSON.parse(localStorage.getItem("brawlers")||"[]");
 
-/* STATE */
+/* =========================
+   GAME STATE
+========================= */
+
 let selectedSlot=null;
 let enemy=[null,null,null];
 let ally=[null,null,null];
 
-/* SETTINGS */
+/* =========================
+   SETTINGS PANEL
+========================= */
+
 function openSettings(){
 panel.style.display="block";
 }
 
 function login(){
+
 if(pass.value===PASSWORD){
 isAdmin=true;
 adminArea.style.display="block";
-}
+alert("Admin Login erfolgreich ✅");
+}else{
+alert("Falsches Passwort ❌");
 }
 
-/* ADD BRAWLER */
+}
+
+/* =========================
+   ADD BRAWLER
+========================= */
+
 function addBrawler(){
 
-if(!isAdmin) return;
+if(!isAdmin){
+alert("Kein Zugriff ❌");
+return;
+}
 
-let file=img.files[0];
+if(!name.value || !img.files[0]){
+alert("Name oder Bild fehlt ❌");
+return;
+}
+
 let reader=new FileReader();
 
 reader.onload=function(){
 
-BRAWLERS.push({
+let newBrawler={
 name:name.value,
 img:reader.result
-});
+};
+
+BRAWLERS.push(newBrawler);
 
 localStorage.setItem("brawlers",JSON.stringify(BRAWLERS));
 
-renderList();
+alert("Brawler hinzugefügt ✅");
 
+name.value="";
+img.value="";
+
+renderList();
 };
 
-reader.readAsDataURL(file);
+reader.readAsDataURL(img.files[0]);
 
 }
 
-/* SELECT SLOT */
+/* =========================
+   SLOT SYSTEM
+========================= */
+
 function selectSlot(team,index){
 selectedSlot={team,index};
 }
 
-/* PICK */
-function pickBrawler(b){
+/* =========================
+   PICK SYSTEM
+========================= */
 
-if(!selectedSlot)return;
+function pickBrawler(index){
+
+if(!selectedSlot){
+alert("Bitte zuerst Slot auswählen!");
+return;
+}
+
+let b=BRAWLERS[index];
 
 if(selectedSlot.team==="enemy"){
 enemy[selectedSlot.index]=b;
@@ -239,41 +313,56 @@ updateUI();
 
 }
 
-/* UPDATE UI */
+/* =========================
+   UPDATE UI
+========================= */
+
 function updateUI(){
 
 let e=document.querySelectorAll("#enemyTeam .slot");
 let a=document.querySelectorAll("#allyTeam .slot");
 
-e.forEach((s,i)=>{
+e.forEach((slot,i)=>{
 if(enemy[i]){
-s.innerHTML=`<img src="${enemy[i].img}"><br>${enemy[i].name}`;
-}else s.innerHTML="?";
+slot.innerHTML=`<img src="${enemy[i].img}"><br>${enemy[i].name}`;
+}else{
+slot.innerHTML="?";
+}
 });
 
-a.forEach((s,i)=>{
+a.forEach((slot,i)=>{
 if(ally[i]){
-s.innerHTML=`<img src="${ally[i].img}"><br>${ally[i].name}`;
-}else s.innerHTML="?";
+slot.innerHTML=`<img src="${ally[i].img}"><br>${ally[i].name}`;
+}else{
+slot.innerHTML="?";
+}
 });
 
 }
 
-/* RENDER */
+/* =========================
+   RENDER LIST
+========================= */
+
 function renderList(){
 
 let val=search.value.toLowerCase();
 
 brawlerList.innerHTML=BRAWLERS
-.filter(b=>b.name.toLowerCase().includes(val))
-.map(b=>`
-<div class="brawler" onclick='pickBrawler(${JSON.stringify(b)})'>
-<img src="${b.img}">
-${b.name}
+.map((b,i)=>({b,i}))
+.filter(x=>x.b.name.toLowerCase().includes(val))
+.map(x=>`
+<div class="brawler" onclick="pickBrawler(${x.i})">
+<img src="${x.b.img}">
+${x.b.name}
 </div>
 `).join("");
 
 }
+
+/* =========================
+   INIT
+========================= */
 
 renderList();
 
