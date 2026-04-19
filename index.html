@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Ranked Brawler System V9</title>
+<title>Ranked Brawler System V10</title>
 
 <style>
 body{
@@ -52,7 +52,7 @@ border-radius:6px;
 border:none;
 }
 
-/* BRAWLER LIST */
+/* BRAWLER */
 .brawler{
 background:#1b1b1b;
 padding:8px;
@@ -62,12 +62,29 @@ cursor:pointer;
 display:flex;
 align-items:center;
 gap:10px;
+position:relative;
 }
 
 .brawler img{
 width:40px;
 height:40px;
 border-radius:6px;
+}
+
+/* ICONS */
+.icon{
+position:absolute;
+top:4px;
+right:4px;
+display:flex;
+gap:4px;
+}
+
+.icon button{
+font-size:10px;
+padding:2px 5px;
+border-radius:4px;
+background:#333;
 }
 
 /* CENTER */
@@ -135,7 +152,7 @@ color:#aaa;
 <body>
 
 <div class="nav">
-<div class="title">🏆 Ranked V9 System</div>
+<div class="title">🏆 Ranked V10 System</div>
 <button onclick="openSettings()">⚙️</button>
 </div>
 
@@ -167,7 +184,7 @@ color:#aaa;
 <div class="slot ally" onclick="selectSlot('ally',2)">?</div>
 </div>
 
-<h3>⭐ Empfohlen (frei)</h3>
+<h3>⭐ Empfohlen (frei System)</h3>
 <div id="recommend"></div>
 
 </div>
@@ -198,10 +215,7 @@ color:#aaa;
 
 <script>
 
-/* =========================
-   DOM FIX (WICHTIG)
-========================= */
-
+/* DOM */
 const panel=document.getElementById("panel");
 const pass=document.getElementById("pass");
 const nameInput=document.getElementById("name");
@@ -210,37 +224,24 @@ const brawlerList=document.getElementById("brawlerList");
 const search=document.getElementById("search");
 const adminArea=document.getElementById("adminArea");
 
-/* =========================
-   ADMIN
-========================= */
-
+/* ADMIN */
 let isAdmin=false;
 const PASSWORD="1234";
 
-/* =========================
-   STORAGE
-========================= */
-
+/* DATA */
 let BRAWLERS=JSON.parse(localStorage.getItem("brawlers")||"[]");
 
-/* =========================
-   STATE
-========================= */
-
+/* STATE */
 let selectedSlot=null;
 let enemy=[null,null,null];
 let ally=[null,null,null];
 
-/* =========================
-   SETTINGS
-========================= */
-
+/* SETTINGS */
 function openSettings(){
 panel.style.display="block";
 }
 
 function login(){
-
 if(pass.value===PASSWORD){
 isAdmin=true;
 adminArea.style.display="block";
@@ -248,13 +249,9 @@ alert("Login OK ✅");
 }else{
 alert("Falsches Passwort ❌");
 }
-
 }
 
-/* =========================
-   ADD BRAWLER (FINAL FIX)
-========================= */
-
+/* ADD */
 function addBrawler(){
 
 if(!isAdmin){
@@ -262,12 +259,10 @@ alert("Kein Zugriff ❌");
 return;
 }
 
-let brawlerName=nameInput.value.trim();
+let nameVal=nameInput.value.trim();
 let file=imgInput.files[0];
 
-console.log("UPLOAD:", brawlerName, file);
-
-if(brawlerName===""){
+if(nameVal===""){
 alert("Name fehlt ❌");
 return;
 }
@@ -281,21 +276,16 @@ let reader=new FileReader();
 
 reader.onload=function(){
 
-let newBrawler={
-name:brawlerName,
+BRAWLERS.push({
+name:nameVal,
 img:reader.result
-};
-
-BRAWLERS.push(newBrawler);
+});
 
 localStorage.setItem("brawlers",JSON.stringify(BRAWLERS));
-
-console.log("Gespeichert:", newBrawler);
 
 nameInput.value="";
 imgInput.value="";
 
-/* FORCE UPDATE */
 renderList();
 
 alert("Brawler hinzugefügt ✅");
@@ -305,26 +295,61 @@ reader.readAsDataURL(file);
 
 }
 
-/* =========================
-   SLOT SYSTEM
-========================= */
+/* DELETE */
+function deleteBrawler(i){
+if(!isAdmin)return;
 
+if(confirm("Löschen?")){
+BRAWLERS.splice(i,1);
+localStorage.setItem("brawlers",JSON.stringify(BRAWLERS));
+renderList();
+}
+}
+
+/* EDIT */
+function editBrawler(i){
+if(!isAdmin)return;
+
+let newName=prompt("Neuer Name:",BRAWLERS[i].name);
+if(newName)BRAWLERS[i].name=newName;
+
+let change=confirm("Bild ändern?");
+if(change){
+let input=document.createElement("input");
+input.type="file";
+input.accept="image/*";
+
+input.onchange=function(){
+let file=input.files[0];
+let reader=new FileReader();
+
+reader.onload=function(){
+BRAWLERS[i].img=reader.result;
+localStorage.setItem("brawlers",JSON.stringify(BRAWLERS));
+renderList();
+};
+
+reader.readAsDataURL(file);
+};
+
+input.click();
+}else{
+localStorage.setItem("brawlers",JSON.stringify(BRAWLERS));
+renderList();
+}
+}
+
+/* SLOT */
 function selectSlot(team,index){
 selectedSlot={team,index};
 }
 
-/* =========================
-   PICK SYSTEM
-========================= */
+/* PICK */
+function pickBrawler(i){
 
-function pickBrawler(index){
+if(!selectedSlot)return;
 
-if(!selectedSlot){
-alert("Erst Slot wählen!");
-return;
-}
-
-let b=BRAWLERS[index];
+let b=BRAWLERS[i];
 
 if(selectedSlot.team==="enemy"){
 enemy[selectedSlot.index]=b;
@@ -336,56 +361,46 @@ updateUI();
 
 }
 
-/* =========================
-   UI UPDATE
-========================= */
-
+/* UI */
 function updateUI(){
 
-let e=document.querySelectorAll("#enemyTeam .slot");
-let a=document.querySelectorAll("#allyTeam .slot");
-
-e.forEach((slot,i)=>{
-slot.innerHTML=enemy[i]
-?`<img src="${enemy[i].img}"><br>${enemy[i].name}`
-:"?";
+document.querySelectorAll("#enemyTeam .slot").forEach((s,i)=>{
+s.innerHTML=enemy[i]
+?`<img src="${enemy[i].img}"><br>${enemy[i].name}`:"?";
 });
 
-a.forEach((slot,i)=>{
-slot.innerHTML=ally[i]
-?`<img src="${ally[i].img}"><br>${ally[i].name}`
-:"?";
+document.querySelectorAll("#allyTeam .slot").forEach((s,i)=>{
+s.innerHTML=ally[i]
+?`<img src="${ally[i].img}"><br>${ally[i].name}`:"?";
 });
 
 }
 
-/* =========================
-   RENDER LIST (FIXED)
-========================= */
-
+/* RENDER */
 function renderList(){
 
-let val=search.value ? search.value.toLowerCase() : "";
+let val=search.value?search.value.toLowerCase():"";
 
-let list=BRAWLERS
-.map((b,i)=>({b,i}))
-.filter(x=>{
-if(val==="") return true;
-return x.b.name.toLowerCase().includes(val);
+let list=BRAWLERS.filter(b=>{
+if(val==="")return true;
+return b.name.toLowerCase().includes(val);
 });
 
-brawlerList.innerHTML=list.map(x=>`
-<div class="brawler" onclick="pickBrawler(${x.i})">
-<img src="${x.b.img}">
-${x.b.name}
+brawlerList.innerHTML=list.map((b,i)=>`
+<div class="brawler">
+<img src="${b.img}">
+${b.name}
+
+${isAdmin?`
+<div class="icon">
+<button onclick="deleteBrawler(${i})">🗑️</button>
+<button onclick="editBrawler(${i})">✏️</button>
+</div>`:""}
 </div>
 `).join("");
 
-console.log("Render:", BRAWLERS.length);
-
 }
 
-/* INIT */
 renderList();
 
 </script>
