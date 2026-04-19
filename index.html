@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title>BrawlRankedHelper</title>
-<style>
 
+<style>
 body {
   font-family: Arial;
   margin: 0;
@@ -12,161 +12,120 @@ body {
   color: white;
 }
 
-/* NAVBAR */
 #navbar {
-  display: flex;
-  justify-content: space-between;
-  padding: 15px;
-  background: #1c1c2e;
-  position: sticky;
-  top: 0;
+  display:flex;
+  justify-content:space-between;
+  padding:15px;
+  background:#1c1c2e;
+  position:sticky;
+  top:0;
 }
 
-.nav-left button {
-  margin-right: 10px;
-}
+.page { display:none; padding:20px; }
+.active { display:block; }
 
-/* LAYOUT */
-.page {
-  display: none;
-  padding: 20px;
-}
-
-.active {
-  display: block;
-}
-
-/* RANKED UI */
 #rankedContainer {
-  display: flex;
-  gap: 20px;
+  display:flex;
+  gap:20px;
 }
 
 #enemyTeam, #yourTeam {
-  flex: 1;
-  padding: 10px;
-  background: #1a1a2a;
+  flex:1;
+  background:#1a1a2a;
+  padding:10px;
 }
 
 #searchPanel {
-  width: 250px;
-  background: #222;
-  padding: 10px;
+  width:250px;
+  background:#222;
+  padding:10px;
 }
 
-/* BRAWLER GRID */
 .brawler {
-  padding: 5px;
-  background: #333;
-  margin: 5px 0;
-  cursor: pointer;
+  background:#333;
+  margin:5px 0;
+  padding:5px;
+  cursor:pointer;
 }
 
-/* ADMIN */
-.adminBtn {
-  background: red;
-  color: white;
-  padding: 5px;
-  cursor: pointer;
-}
-
-/* MODAL */
 #modal {
-  display: none;
-  position: fixed;
-  top: 20%;
-  left: 35%;
-  width: 30%;
-  background: #222;
-  padding: 20px;
-  z-index: 1000;
+  display:none;
+  position:fixed;
+  top:20%;
+  left:35%;
+  width:30%;
+  background:#222;
+  padding:20px;
 }
-
 </style>
+
 </head>
 
 <body>
 
-<!-- NAVBAR -->
+<!-- NAV -->
 <div id="navbar">
-
-  <div class="nav-left">
+  <div>
     <button onclick="showPage('home')">Home</button>
     <button onclick="showPage('ranked')">Ranked</button>
   </div>
 
-  <div class="nav-right">
+  <div>
     <span id="userStatus">Nicht eingeloggt</span>
-    <button onclick="logout()" id="logoutBtn" style="display:none;">Logout</button>
+    <button id="logoutBtn" onclick="logout()" style="display:none;">Logout</button>
   </div>
-
 </div>
 
-<!-- HOME PAGE -->
+<!-- HOME -->
 <div id="home" class="page active">
 
-<h2>Login / Register</h2>
-
-<div>
-  <h3>Register</h3>
-  <input id="regUser" placeholder="Username"><br>
-  <input id="regEmail" placeholder="Email"><br>
-  <input id="regPass" type="password" placeholder="Passwort"><br>
-  <button onclick="register()">Registrieren</button>
-</div>
+<h2>Register</h2>
+<input id="regUser" placeholder="Username"><br>
+<input id="regEmail" placeholder="Email"><br>
+<input id="regPass" type="password" placeholder="Passwort"><br>
+<button onclick="register()">Registrieren</button>
 
 <hr>
 
-<div>
-  <h3>Login</h3>
-  <input id="logEmail" placeholder="Email"><br>
-  <input id="logPass" type="password" placeholder="Passwort"><br>
-  <button onclick="login()">Login</button>
-</div>
+<h2>Login</h2>
+<input id="logEmail" placeholder="Email"><br>
+<input id="logPass" type="password" placeholder="Passwort"><br>
+<button onclick="login()">Login</button>
 
 </div>
 
-<!-- RANKED PAGE -->
+<!-- RANKED -->
 <div id="ranked" class="page">
 
-<h2>Ranked Mode</h2>
+<h2>Ranked</h2>
 
 <div id="rankedContainer">
 
-  <!-- SEARCH / BRAWLERS -->
-  <div id="searchPanel">
-    <h4>Brawler Suche</h4>
-    <input placeholder="Search..." id="searchInput">
-    <div id="brawlerList"></div>
+<div id="searchPanel">
+<h4>Brawler</h4>
+<div id="brawlerList"></div>
+<button id="adminBtn" onclick="openModal()" style="display:none;">Upload</button>
+</div>
 
-    <button onclick="openUpload()" id="adminUploadBtn" style="display:none;">
-      Upload Brawler
-    </button>
-  </div>
+<div id="enemyTeam">
+<h3>Enemy</h3>
+</div>
 
-  <!-- ENEMY TEAM -->
-  <div id="enemyTeam">
-    <h3>Enemy Team</h3>
-    <div id="enemySlots">3 Slots</div>
-  </div>
-
-  <!-- YOUR TEAM -->
-  <div id="yourTeam">
-    <h3>Your Team</h3>
-    <div id="yourSlots">3 Slots</div>
-  </div>
+<div id="yourTeam">
+<h3>You</h3>
+</div>
 
 </div>
 
 </div>
 
-<!-- UPLOAD MODAL -->
+<!-- MODAL -->
 <div id="modal">
-  <h3>Brawler Upload</h3>
-  <input id="brawlerName" placeholder="Name"><br>
-  <input id="brawlerImg" placeholder="Image URL"><br>
-  <button onclick="uploadBrawler()">Upload</button>
-  <button onclick="closeModal()">X</button>
+<h3>Upload Brawler</h3>
+<input id="bName" placeholder="Name"><br>
+<input id="bImg" placeholder="Image URL"><br>
+<button onclick="uploadBrawler()">Save</button>
+<button onclick="closeModal()">X</button>
 </div>
 
 <!-- FIREBASE -->
@@ -178,7 +137,8 @@ getAuth,
 createUserWithEmailAndPassword,
 signInWithEmailAndPassword,
 signOut,
-onAuthStateChanged
+onAuthStateChanged,
+sendEmailVerification
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 import {
@@ -191,7 +151,7 @@ addDoc,
 getDocs
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// FIREBASE CONFIG
+// 🔥 FIREBASE CONFIG (MUSS EINGETRAGEN WERDEN)
 const firebaseConfig = {
 apiKey: "XXX",
 authDomain: "XXX",
@@ -207,86 +167,121 @@ const db = getFirestore(app);
 
 let currentUser = null;
 
-/* ================= NAV ================= */
+---
 
-window.showPage = function(page){
-document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-document.getElementById(page).classList.add("active");
-}
-
-/* ================= REGISTER ================= */
+# 🔐 REGISTER (FIX + EMAIL VERIFICATION)
 
 window.register = async function(){
+
 let username = regUser.value;
 let email = regEmail.value;
 let pass = regPass.value;
 
-let userCred = await createUserWithEmailAndPassword(auth,email,pass);
+try {
 
+const userCred = await createUserWithEmailAndPassword(auth,email,pass);
+
+// 📩 EMAIL BESTÄTIGUNG SENDEN
+await sendEmailVerification(userCred.user);
+
+// USER SPEICHERN
 await setDoc(doc(db,"users",userCred.user.uid),{
 username: username,
 email: email,
-isAdmin: false
+isAdmin: false,
+verified: false
 });
 
+alert("Check deine Email zur Bestätigung 📩");
+
+} catch(e){
+alert(e.message);
 }
 
-/* ================= LOGIN ================= */
+};
+
+---
+
+# 🔑 LOGIN (BLOCK WENN NICHT VERIFIZIERT)
 
 window.login = async function(){
+
 let email = logEmail.value;
 let pass = logPass.value;
 
-let userCred = await signInWithEmailAndPassword(auth,email,pass);
+try {
 
-let snap = await getDoc(doc(db,"users",userCred.user.uid));
+const userCred = await signInWithEmailAndPassword(auth,email,pass);
+
+if(!userCred.user.emailVerified){
+alert("Bitte Email bestätigen 📩");
+return;
+}
+
+const snap = await getDoc(doc(db,"users",userCred.user.uid));
 currentUser = snap.data();
 
 updateUI();
 loadBrawlers();
+
+} catch(e){
+alert(e.message);
 }
 
-/* ================= LOGOUT ================= */
+};
+
+---
+
+# 🚪 LOGOUT
 
 window.logout = async function(){
 await signOut(auth);
 currentUser = null;
 updateUI();
-}
+};
 
-/* ================= AUTH STATE ================= */
+---
+
+# 🔁 AUTH STATE
 
 onAuthStateChanged(auth, async (user)=>{
-if(user){
-let snap = await getDoc(doc(db,"users",user.uid));
+
+if(user && user.emailVerified){
+const snap = await getDoc(doc(db,"users",user.uid));
 currentUser = snap.data();
 updateUI();
 loadBrawlers();
 }
+
 });
 
-/* ================= UI ================= */
+---
+
+# 🧠 UI UPDATE
 
 function updateUI(){
 
 if(currentUser){
-userStatus.innerText = "Logged in: " + currentUser.username;
+userStatus.innerText = "Logged: " + currentUser.username;
 logoutBtn.style.display = "block";
 
 if(currentUser.isAdmin){
-adminUploadBtn.style.display = "block";
+adminBtn.style.display = "block";
 }
+
 }else{
 userStatus.innerText = "Nicht eingeloggt";
 logoutBtn.style.display = "none";
-adminUploadBtn.style.display = "none";
+adminBtn.style.display = "none";
 }
 
 }
 
-/* ================= BRAWLERS ================= */
+---
 
-window.openUpload = function(){
+# 🎮 BRAWLERS
+
+window.openModal = function(){
 modal.style.display = "block";
 }
 
@@ -299,12 +294,13 @@ window.uploadBrawler = async function(){
 if(!currentUser?.isAdmin) return;
 
 await addDoc(collection(db,"brawlers"),{
-name: brawlerName.value,
-img: brawlerImg.value
+name: bName.value,
+img: bImg.value
 });
 
 closeModal();
 loadBrawlers();
+
 }
 
 window.loadBrawlers = async function(){
@@ -314,17 +310,26 @@ list.innerHTML = "";
 
 let snap = await getDocs(collection(db,"brawlers"));
 
-snap.forEach(doc=>{
-let b = doc.data();
+snap.forEach(d=>{
+let b = d.data();
 
 let div = document.createElement("div");
-div.className = "brawler";
-div.innerHTML = b.name;
+div.className="brawler";
+div.innerText = b.name;
 
 list.appendChild(div);
 });
 
 }
+
+---
+
+# 🌐 NAV
+
+window.showPage = function(page){
+document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+document.getElementById(page).classList.add("active");
+};
 
 </script>
 
